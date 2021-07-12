@@ -1,0 +1,23 @@
+<?php
+/**
+ * {PLGNAM}.php
+ */
+namespace app\plugin\{PLG_FLD};
+{FILE_LIC}
+
+{USES}
+
+/**
+ * Class {PLGNAM}
+ * @package app\plugin\{PLG_FLD}
+ */
+class {PLGNAM} {EXTENDS} {IMPLS} {
+
+    {CONSTR}
+
+    {RUN}
+
+{FNS}
+
+    {DI}
+}

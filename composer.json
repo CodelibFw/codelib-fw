@@ -1,0 +1,22 @@
+{
+    "name": "codelibfw/codelib",
+    "description": "PHP Framework and Components Library",
+    "type": "framework",
+    "keywords": ["framework","php","components","vue"],
+    "homepage": "http://codelibfw.com/",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "codelib",
+            "email": "codelibfw@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2",
+        "ext-mbstring": "*"
+    },
+    "autoload": {
+        "psr-4": { "cl\\": "src/cl" }
+    },
+    "minimum-stability": "dev"
+}
