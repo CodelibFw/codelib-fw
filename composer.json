@@ -1,5 +1,5 @@
 {
-    "name": "codelibfw/codelib",
+    "name": "codelibfw/codelib-fw",
     "description": "PHP Framework and Components Library",
     "type": "framework",
     "keywords": ["framework","php","components","vue"],
