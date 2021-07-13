@@ -63,7 +63,7 @@ class Email
                 return $this->phpmailerSend($email, $emailConfig);
             } else {
                 // call custom email library
-                call_user_func_array($emailConfig['emailSender'], $emailConfig);
+                call_user_func_array($emailConfig['emailSender'], [$email,$emailConfig]);
             }
         }
         // no email library configured, use basic sendmail functionality
