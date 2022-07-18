@@ -43,6 +43,6 @@ class CLHtmlSelect extends CLHtmlCtrl {
      */
 	public function __construct($name,$value='',$cssId='',$cssClass='clhtmlselect'){
 		parent::__construct('select',$name,$value,true,$cssId,$cssClass);
-		$this->addAllowed('ui\controls\web\CLHtmlOption'); // limit child elements to the ones specified as allowed
+		$this->addAllowed('cl\ui\web\CLHtmlOption'); // limit child elements to the ones specified as allowed
 	}
 }

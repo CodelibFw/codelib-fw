@@ -28,6 +28,9 @@ namespace cl\ui\web;
  *
  */
 
+use cl\ui\contract\a;
+use cl\ui\contract\accepts;
+
 /**
  * Class CLHtmlOption
  * Represents an html option for a select's <option> element
@@ -59,9 +62,34 @@ class CLHtmlOption extends CLHtmlBase{
      * Returns the html representation of this control
      * @return string
      */
-	public function toHtml(){
+	public function toHtml($flag = null){
 		$html = '<'.$this->element.' '.$this->cssId.$this->cssClass.$this->propertiesToHtml().$this->eventsToHtml().' >';
 		$html.=$this->content.'</'.$this->element.'>';
 		return $html;
 	}
+
+    public function setValue($value)
+    {
+        // TODO: Implement setValue() method.
+    }
+
+    public function addValue($value)
+    {
+        // TODO: Implement addValue() method.
+    }
+
+    public function add($value)
+    {
+        // TODO: Implement add() method.
+    }
+
+    public function toJs()
+    {
+        // TODO: Implement toJs() method.
+    }
+
+    public function addFlag($flag)
+    {
+        // TODO: Implement addFlag() method.
+    }
 }

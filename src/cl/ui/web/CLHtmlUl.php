@@ -42,6 +42,6 @@ class CLHtmlUl extends CLHtmlCtrl {
      */
     public function __construct($value='',$cssId='',$cssClass='clhtmlul'){
         parent::__construct('ul',null,$value,true,$cssId,$cssClass);
-        $this->addAllowed('ui\controls\web\CLHtmlLi'); // only allows <li> (CLHtmlLi) child elements
+        $this->addAllowed('cl\ui\web\CLHtmlLi'); // only allows <li> (CLHtmlLi) child elements
     }
 }

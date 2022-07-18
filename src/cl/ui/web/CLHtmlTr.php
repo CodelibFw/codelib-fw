@@ -49,6 +49,6 @@ class CLHtmlTr extends CLHtmlCtrl {
 		$this->addProperty('height', $height);
 		$this->addProperty('rowspan', $rowspan);
 		$this->addFlag($isheader);
-		$this->addAllowed('ui\controls\web\CLHtmlTd'); // only allows <td> (or <th>) as children
+		$this->addAllowed('cl\ui\web\CLHtmlTd'); // only allows <td> (or <th>) as children
 	}
 }
