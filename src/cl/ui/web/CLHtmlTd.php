@@ -28,6 +28,9 @@ namespace cl\ui\web;
  *
  */
 
+use cl\ui\contract\a;
+use cl\ui\contract\accepts;
+
 /**
  * Class CLHtmlTd
  * Represents an html table <td> (or <th>) element
@@ -60,7 +63,7 @@ class CLHtmlTd extends CLHtmlBase{
      * @return string
      * @throws \Exception
      */
-	public function toHtml($isheader){
+	public function toHtml($isheader = null){
 		if($isheader!=null && $isheader==true) {
 			$this->isheader = $isheader;
 		}
@@ -77,4 +80,29 @@ class CLHtmlTd extends CLHtmlBase{
 		}
 		return $html;
 	}
+
+    public function setValue($value)
+    {
+        // TODO: Implement setValue() method.
+    }
+
+    public function addValue($value)
+    {
+        // TODO: Implement addValue() method.
+    }
+
+    public function add($value)
+    {
+        // TODO: Implement add() method.
+    }
+
+    public function toJs()
+    {
+        // TODO: Implement toJs() method.
+    }
+
+    public function addFlag($flag)
+    {
+        // TODO: Implement addFlag() method.
+    }
 }

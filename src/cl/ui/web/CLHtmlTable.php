@@ -45,6 +45,6 @@ class CLHtmlTable extends CLHtmlCtrl {
 		parent::__construct('table',null,null,true,$cssId,$cssClass);
 		$this->addProperty('width', $width);
 		$this->addProperty('height', $height);
-		$this->addAllowed('ui\controls\web\CLHtmlTr'); // accepts only <tr> as child element
+		$this->addAllowed('cl\ui\web\CLHtmlTr'); // accepts only <tr> as child element
 	}
 }

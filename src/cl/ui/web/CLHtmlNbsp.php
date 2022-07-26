@@ -28,6 +28,9 @@ namespace cl\ui\web;
  *
  */
 
+use cl\ui\contract\a;
+use cl\ui\contract\accepts;
+
 /**
  * Class CLHtmlNbsp
  * Represents an html &nbsp;
@@ -49,11 +52,36 @@ class CLHtmlNbsp extends CLHtmlBase{
      * Returns as many html blank spaces as specified by this control's value (count)
      * @return string
      */
-    public function toHtml(){
+    public function toHtml($flag = null){
         $html = '';
         for ($i=0;$i < $this->value;$i++) {
             $html.='&nbsp;';
         }
         return $html;
+    }
+
+    public function setValue($value)
+    {
+        // TODO: Implement setValue() method.
+    }
+
+    public function addValue($value)
+    {
+        // TODO: Implement addValue() method.
+    }
+
+    public function add($value)
+    {
+        // TODO: Implement add() method.
+    }
+
+    public function toJs()
+    {
+        // TODO: Implement toJs() method.
+    }
+
+    public function addFlag($flag)
+    {
+        // TODO: Implement addFlag() method.
     }
 }
