@@ -671,7 +671,7 @@ class CLHtmlApp implements CLApp
         global $installMode;
 
         $activeDeployment = $this->getActiveDeployment();
-        if (!isset($installMode) || ($activeDeployment == null || $activeDeployment->getDeploymentType() != CLDeployment::DEV)) {
+        if (!isset($installMode) && ($activeDeployment == null || $activeDeployment->getDeploymentType() != CLDeployment::DEV)) {
             _log('Diagnostics require Dev Mode. Please add a CLDeployment::DEV deployment and make it active');
             return false;
         }

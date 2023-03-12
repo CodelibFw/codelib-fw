@@ -168,6 +168,8 @@ function loadJson(string $filepath, bool $throwOnError = false): ?array
         if ($error != JSON_ERROR_NONE) {
             if ($throwOnError) {
                 throw new Exception("JSON Parse error for file: $filepath: ".json_last_error_msg());
+            } else {
+                _log("JSON Parse error for file: $filepath: ".json_last_error_msg(), \cl\contract\CLLogger::ERROR);
             }
         }
         if ($json == null) { return null; }
@@ -175,6 +177,8 @@ function loadJson(string $filepath, bool $throwOnError = false): ?array
     }
     if ($throwOnError) {
         throw new Exception("File not found: $filepath");
+    } else {
+        _log("File not found: $filepath", \cl\contract\CLLogger::ERROR);
     }
     return null;
 }
