@@ -40,6 +40,8 @@ use PDO;
  */
 class SchemaMigrationTool
 {
+    private const SUCCESS = '00000';
+    private const WARNING = '01000';
     private $schemaPath = BASE_DIR . '/schema';
     private $connectionDetails;
     private $conn, $dbname;
@@ -98,13 +100,19 @@ class SchemaMigrationTool
         return $migration;
     }
 
+    /**
+     * @throws \Exception
+     */
     private function runMigration($migration, $reverse = false, $lastVersion = null): bool {
         if ($migration == null) {
             throw new \Exception('Cannot execute an undefined Migration');
         }
         $dbname = $migration['dbname']??null;
         if ($dbname == null) {
-            throw new \Exception("Db name missing in migration configuration for migration version: ".($migration['version']??'missing version'));
+            if (!isset($connectionDetails['dbname'])) {
+                throw new \Exception("Db name missing in migration configuration for migration version: " . ($migration['version'] ?? 'missing version'));
+            }
+            $dbname = $connectionDetails['dbname'];
         }
         $files = $migration['files'];
         if ($reverse) {
@@ -124,14 +132,21 @@ class SchemaMigrationTool
                 throw new \Exception("Database connection details missing from migration and App configuration for repo: ".$config->getActiveClRepository());
             }
         }
-        if (!isset($connectionDetails['dbname']) && $createdb === 'false') {
-            $connectionDetails['dbname'] = $dbname;
-        }
         $resultsf = false;
-        $this->connect($connectionDetails);
         if ($createdb == 'true') {
+            if (isset($connectionDetails['dbname'])) {
+                unset($connectionDetails['dbname']);
+            }
+            $this->connect($connectionDetails);
             $resultsf = $this->createDb($dbname);
+            $connectionDetails['dbname'] = $dbname;
+        } else {
+            if (!isset($connectionDetails['dbname'])) {
+                $connectionDetails['dbname'] = $dbname;
+            }
         }
+        // connect to the db (reconnect if db was created)
+        $this->connect($connectionDetails);
         if (!empty($files)) {
             $path = $this->schemaPath.'/'. ($migration['path']??'');
             $path = endsWith($path, '/') ? $path : $path.'/';
@@ -141,6 +156,7 @@ class SchemaMigrationTool
                     $data = file_get_contents($filepath);
                     if ($data != null) {
                         $resultsf = $this->execStatement($data);
+                        $this->stopIfError($resultsf, 'Unable to run migration for '.$filepath);
                     }
                 }
             }
@@ -236,7 +252,9 @@ class SchemaMigrationTool
 
     public function createDb($dbname) {
         if ($this->conn == null) { throw new \Exception('Unable to connect to MySql'); }
-        return $this->conn->exec("CREATE DATABASE ".$dbname) !== false;
+        $resultsf = $this->conn->exec("CREATE DATABASE ".$dbname);
+        $this->stopIfError($resultsf, '');
+        return $resultsf;
     }
 
     public function execStatement(string $stmt) {
@@ -274,6 +292,16 @@ class SchemaMigrationTool
             _log("Failed to execute query:");
             _log($e->getMessage());
             return null;
+        }
+    }
+
+    private function stopIfError($resultsf, $message) {
+        if ($resultsf === false) {
+            $err = $this->conn->errorInfo();
+            if ($err[0] === self::SUCCESS || $err[0] === self::WARNING) {
+                return true;
+            }
+            throw new \Exception($message. ' due to '.$err[2]);
         }
     }
 }
