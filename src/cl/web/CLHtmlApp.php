@@ -36,6 +36,7 @@ use cl\core\CLBaseServiceRequest;
 use cl\core\CLFlag;
 use cl\core\CLInstantiator;
 use cl\core\CLRoute;
+use cl\error\CLAppException;
 use cl\plugin\CLBaseResponse;
 use cl\store\cache\CLMemCacheRepository;
 use cl\util\CLSimpleLogger;
@@ -55,6 +56,7 @@ class CLHtmlApp implements CLApp
 {
     private $header;
     private $pages = array();
+    private $pageDef = array();
     private $footer;
     private $plugins = array(), $inlPlugins = array();
     private $pluginResponse = null;
@@ -73,6 +75,7 @@ class CLHtmlApp implements CLApp
     private $cache = null;
     private $csrfToken = null;
     private $appNs = 'app', $appNsPrefix = '';
+    private $vars = array();
     static public $clapp = null;
 
     const VERSION = '1.0.0';
@@ -203,8 +206,42 @@ class CLHtmlApp implements CLApp
     }
 
     /**
-     * Adds a Plugin to this App. A Plugin is expected to implement the CLPlugin interface, and its file to be placed
-     * in the plugin folder of the app.
+     * Adds a Page Definition to the App
+     * @param mixed $key route or flow key for the page or pages. If array, page will handle several flows
+     * @param array $lf one or more look and feels for this page (for instance to specify: heading, content, footer)
+     * @param array $vars optional array of variables for the page (key/value pairs)
+     * @param bool $isdefault specify whether to use page as the default page. For array of pages, the 1st page is set
+     * @return $this
+     */
+    public function addPage($key, array $lf, array $vars = [], $protection = 'none', bool $isdefault = false) {
+        if (is_array($key)) {
+            $default = $isdefault;
+            foreach ($key as $flowKey) {
+                $this->pageDef[$flowKey] = array('lf' => $lf, 'vars' => $vars, 'protection' => $protection,
+                    'default' => $default);
+                $default = false;
+                if ($flowKey == '404') {
+                    $this->notFoundPage = $flowKey;
+                }
+            }
+            if ($isdefault) {
+                $this->defaultPage = $key[0];
+            }
+            return $this;
+        }
+        $this->pageDef[$key] = array('lf' => $lf, 'vars' => $vars, 'protection' => $protection, 'default' => $isdefault);
+        if ($isdefault) {
+            $this->defaultPage = $key;
+        }
+        if ($key == '404') {
+            $this->notFoundPage = $key;
+        }
+        return $this;
+    }
+
+    /**
+     * Adds a Plugin to this App. A Plugin is expected to implement the CLPlugin interface, and the containing file
+     * should be placed in the plugin folder of the app.
      * @param string the flow key the plugin will hook into. As an example, a plugin could register for user/register,
      *        to handle user registration, or maybe for user.*, to handle all activities in the user flow. See:
      *        @{CLRoute::create} for more options
@@ -402,7 +439,7 @@ class CLHtmlApp implements CLApp
 
             $requestId = $this->clrequest->getRequestId();
             if ($requestId == null) { // shouldn't happen once everything is thoroughly tested
-                throw new Exception('Invalid request');
+                throw new CLAppException('Invalid request');
             }
             if (endsWith($requestId, ['.png', '.jpg', '.gif', '.css', '.js'])) {
                 $this->getCllogger()->debug('Resource requested: '.$requestId.' and ignored');
@@ -415,7 +452,7 @@ class CLHtmlApp implements CLApp
             if (!$this->callRequestFilters($this->clrequest->getMethod())) {
                 $duration = microtime(true) - $startTime;
                 $this->getCllogger()->debug('Execution completed in ' . $duration . ' seconds');
-                throw new Exception('Request rejected as invalid');
+                throw new CLAppException('Request rejected as invalid');
             }
             $this->dispatch($requestId);
             ////
@@ -434,7 +471,7 @@ class CLHtmlApp implements CLApp
             if (!$this->callRequestFilters($this->clrequest->getMethod())) {
                 $duration = microtime(true) - $startTime;
                 $this->getCllogger()->debug('Execution completed in ' . $duration . ' seconds');
-                throw new Exception('Request rejected as invalid');
+                throw new CLAppException('Request rejected as invalid');
             }
             $this->dispatch($this->defaultPage);
             echo $this->render($this->defaultPage);
@@ -496,15 +533,27 @@ class CLHtmlApp implements CLApp
             $cfgValue = $this->appConfig->getAppConfig(RENDER_ALL);
             if ($cfgValue != null && $cfgValue) {
                 $html = '';
-                foreach (array_keys($this->pages) as $pgkey) {
-                    $element = $this->processPluginResponses($pgkey);
-                    $element->setClrequest($this->clrequest);
-                    $html .= $element->toHtml(null);
+                if (count($this->pageDef) > 0) {
+                    foreach (array_keys($this->pageDef) as $pgkey) {
+                        $element = $this->processPluginResponses($pgkey);
+                        $element->setClrequest($this->clrequest);
+                        $html .= $element->toHtml(null);
+                    }
+                } else {
+                    foreach (array_keys($this->pages) as $pgkey) {
+                        $element = $this->processPluginResponses($pgkey);
+                        $element->setClrequest($this->clrequest);
+                        $html .= $element->toHtml(null);
+                    }
                 }
                 return $html;
             }
 
             $element = $this->processPluginResponses($key);
+            $this->setLoginStatus();
+            if (count($this->vars) > 0) {
+                $element->addVars($this->vars);
+            }
             $element->setClrequest($this->clrequest);
             $this->sendHeaders();
             return $element->toHtml(null);
@@ -516,15 +565,20 @@ class CLHtmlApp implements CLApp
 
     protected function render404() {
         header(CLWebResponseCode::getResponseCode(404), true, 404);
-        if ($this->notFoundPage == null) return '';
+        if ($this->notFoundPage == null) {
+
+            return '';
+        }
         $element = isset($this->pages[$this->notFoundPage]) ? $this->pages[$this->notFoundPage] : null;
+        if ($element === null && isset($this->pageDef[$this->notFoundPage])) {
+            $element = $this->mkPage($this->notFoundPage);
+        }
         return $element->toHtml(null);
     }
 
     protected function renderErrorPage() {
 
-        $element = isset($this->pages[CLHtmlApp::ERRORPAGE]) ? $this->pages[CLHtmlApp::ERRORPAGE] : null;
-        if ($element == null) { $this->setDefaultErrorPage(); }
+        $element = $this->getErrorPage();
         $statusCode = $element->getVar(STATUS_CODE);
         if ($statusCode != null) {
             $responseCode = CLWebResponseCode::getResponseCode(404);
@@ -546,6 +600,9 @@ class CLHtmlApp implements CLApp
             }
         }
         $element = isset($this->pages[$key]) ? $this->pages[$key] : null;
+        if ($element === null && isset($this->pageDef[$key])) {
+            $element = $this->mkPage($key);
+        }
         if ($isJson) {
             $element = new CLHtmlCtrl('');
         }
@@ -560,27 +617,90 @@ class CLHtmlApp implements CLApp
             if (isset($this->pages[$pgkey])) {
                 $element = $this->pages[$pgkey];
             } else {
-                $element = $this->getErrorPage();
-                $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
-                $this->cllogger->info('Page '.$pgkey. ', requested by Plugin, does not exist');
-                return $element;
+                if (isset($this->pageDef[$pgkey])) {
+                    $element = $this->mkPage($pgkey);
+                }
+                if ($element === null) {
+                    $element = $this->getErrorPage();
+                    $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
+                    $this->cllogger->info('Page ' . $pgkey . ', requested by Plugin, does not exist');
+                    return $element;
+                }
             }
             $key = $pgkey;
         }
         $vars = $this->pluginResponse->getVars();
-        if (isset($vars) && is_array($vars)) {
+        if (count($vars) > 0) {
             if (!isset($element)) {
                 if (!isset($this->defaultPage)) {
                     throw new \cl\error\CLResourceFoundException('Page not found: ' . $key);
                 }
-                $element = $this->pages[$this->defaultPage];
+                if (isset($this->pages[$this->defaultPage])) {
+                    $element = $this->pages[$this->defaultPage];
+                } else if (isset($this->pageDef[$this->defaultPage])) {
+                        $element = $this->mkPage($this->defaultPage);
+                }
             }
-            if (isset($vars['laf']) && !$isJson) {
-                $element->setLookandFeel($vars['laf']);
+            if ($element !== null) {
+                if (isset($vars['laf']) && !$isJson) {
+                    $element->setLookandFeel($vars['laf']);
+                }
+                $element->addVars($vars);
             }
-            $element->addVars($vars);
+        }
+        if ($element === null) {
+            $element = $this->getErrorPage();
+            $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
         }
         return $element;
+    }
+
+    private function mkPage($key) {
+        $page = new CLHtmlPage(null, '');
+        $accesslevel = $this->pageDef[$key]['protection'];
+        if ($accesslevel !== 'none' && !$this->clsession->get(CLFlag::IS_LOGGED_IN)) {
+            throw new CLAppException('Access to page denied. Please login first');
+        }
+        $page->setLookandFeel($this->pageDef[$key]['lf'][0]);
+        $n = count($this->pageDef[$key]['lf']);
+        if ($n > 1) {
+            for ($i=1; $i < $n; $i++) {
+                $page->addElement(Util::addExt($this->pageDef[$key]['lf'][$i], '.php'));
+            }
+        }
+        if (count($this->pageDef[$key]['vars']) > 0) {
+            foreach ($this->pageDef[$key]['vars'] as $pvar => $pvarVal) {
+                if (startsWith($pvarVal, 'session.')) {
+                    $sessionKey = mb_substr($pvarVal, 8);
+                    $this->pageDef[$key]['vars'][$pvar] = $this->clsession->get($sessionKey, '');
+                }
+            }
+            $page->setVars($this->pageDef[$key]['vars']);
+        }
+        $this->addElement($key, $page, $this->pageDef[$key]['default']);
+        return $page;
+    }
+
+    public function instantiatePlugin($plugin, $method) {
+        $clServiceRequest = new CLBaseServiceRequest($plugin, $method, $this->clrequest, $this->getAppConfig(), $this->clsession);
+        if (startsWith($plugin, 'cl.ref.') && isset($this->inlPlugins[$plugin])) {
+            $plugin = $this->inlPlugins[$plugin];
+            $plugin->init($clServiceRequest, $this->pluginResponse);
+            return $plugin;
+        } else {
+            $pluginFile = Util::addExt($plugin, 'php');
+            $pluginFolder = strtolower($plugin);
+            if (file_exists(BASE_DIR . '/' . $this->extFolder . '/' . $pluginFile)) {
+                $className = $this->appNsPrefix . '\\' . $this->extFolder . '\\' . $plugin;
+            } elseif (file_exists(BASE_DIR . '/' . $this->extFolder . '/' . $pluginFolder . '/' . $pluginFile)) {
+                $className = $this->appNsPrefix . '\\' . $this->extFolder . '\\' . $pluginFolder . '\\' . $plugin;
+            } elseif (file_exists(CL_DIR . '/cl/plugin/' . $pluginFile)) {
+                $className = '\cl\plugin\\' . $plugin;
+            } else {
+                throw new Exception('Extension ' . $pluginFile . ' does not exist');
+            }
+            return CLInstantiator::classInstance($className, 'cl\contract\CLPlugin', false, $clServiceRequest, $this->pluginResponse);
+        }
     }
 
     protected function callPlugins($key) {
@@ -597,30 +717,13 @@ class CLHtmlApp implements CLApp
                     $method = 'run';
                 }
             }
-            $clServiceRequest = new CLBaseServiceRequest($plugin, $method, $this->clrequest, $this->getAppConfig(), $this->clsession);
-            if (startsWith($plugin, 'cl.ref.') && isset($this->inlPlugins[$plugin])) {
-                $plugin = $this->inlPlugins[$plugin];
-                $plugin->init($clServiceRequest, $this->pluginResponse);
-            } else {
-                $pluginFile = Util::addExt($plugin, 'php');
-                $pluginFolder = strtolower($plugin);
-                if (file_exists(BASE_DIR . '/' . $this->extFolder . '/' . $pluginFile)) {
-                    $className = $this->appNsPrefix . '\\' . $this->extFolder . '\\' . $plugin;
-                } elseif (file_exists(BASE_DIR . '/' . $this->extFolder . '/' . $pluginFolder . '/' . $pluginFile)) {
-                    $className = $this->appNsPrefix . '\\' . $this->extFolder . '\\' . $pluginFolder . '\\' . $plugin;
-                } elseif (file_exists(CL_DIR . '/cl/plugin/' . $pluginFile)) {
-                    $className = '\cl\plugin\\' . $plugin;
-                } else {
-                    throw new Exception('Extension ' . $pluginFile . ' does not exist');
-                }
-                $plugin = CLInstantiator::classInstance($className, 'cl\contract\CLPlugin', false, $clServiceRequest, $this->pluginResponse);
-            }
+            $plugin = $this->instantiatePlugin($plugin, $method);
             // try/catch to be backward compatible while also making setLogger optional
             try {
                 $this->callMethod($plugin, 'setLogger', $this->cllogger);
             } catch (Exception $e) {
             }
-            CLInstantiator::iocCheck($plugin, $this->getAppConfig());
+            CLInstantiator::iocCheck($plugin, $this->getAppConfig(), $this);
             $this->pluginResponse = $this->callMethod($plugin, $method);
         }
     }
@@ -634,6 +737,13 @@ class CLHtmlApp implements CLApp
         return $this;
     }
 
+    private function setLoginStatus() {
+        if ($this->clsession->get(CLFlag::IS_LOGGED_IN)) {
+            $this->vars['loggedIn'] = true;
+        } else {
+            $this->vars['loggedIn'] = false;
+        }
+    }
     /**
      * @return string
      */
@@ -662,7 +772,7 @@ class CLHtmlApp implements CLApp
     {
         if (isset($this->pages[CLHtmlApp::ERRORPAGE])) { return $this; } // only set, if not already set by app
         $errorPage = new CLHtmlPage(null, '');
-        $errorPage->addElement('errorpage.php');
+        $errorPage->setLookandFeel('bt53')->addElement('errorpage.php')->addElement('bt53footer.php');
         $this->setErrorPage($errorPage);
         return $this;
     }
@@ -788,7 +898,7 @@ class CLHtmlApp implements CLApp
         if ($sessionHandler == null) {
             throw new Exception('Failed to instantiate Session handler: '.$handlerClass);
         }
-        CLInstantiator::iocCheck($sessionHandler, $this->getAppConfig());
+        CLInstantiator::iocCheck($sessionHandler, $this->getAppConfig(), $this);
         session_set_save_handler($sessionHandler, true);
         $this->startSession();
     }
@@ -968,7 +1078,7 @@ class CLHtmlApp implements CLApp
     public function exceptionResponse($msg) {
         $this->pluginResponses = array();
         $element = $this->getErrorPage();
-        $element->addVars(array("feedback" => 'Unfortunately an internal error occurred'.$msg));
+        $element->addVars(array("feedback" => $msg ?? 'Unfortunately an internal error occurred'));
         echo $this->renderErrorPage();
     }
 

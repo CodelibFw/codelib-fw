@@ -82,7 +82,7 @@ function endsWith(string $str, $search) {
  * Finds if a strings starts with specified substring (search)
  * if $search is an array, it will return true, if the string starts with any of the strings in the array
  * @param string $str
- * @param $search
+ * @param mixed $search
  * @return bool
  */
 function startsWith(string $str, $search) {
@@ -103,6 +103,13 @@ function isTrue($var) {
     return $var != null && is_bool($var) && $var;
 }
 
+/**
+ * Checks if the Logged In user has the requested role or roles (priviledges)
+ * if role ends in plus, for instance 3+, then check if user has 3 or higher access level (role)
+ * @param mixed $role role or roles to check (if array)
+ * @param \cl\web\CLSession $clsession current user session
+ * @return bool
+ */
 function greenLight($role, $clsession) {
     if ($role == null) { return true; }
     if ($clsession == null) { return false; }

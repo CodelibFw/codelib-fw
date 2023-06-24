@@ -47,6 +47,7 @@ class CLBasePlugin implements \cl\contract\CLPlugin
     protected $clServiceRequest;
     protected $logger;
     protected $pluginResponse;
+    protected $clSession;
 
     public function __construct(CLServiceRequest $clServiceRequest = null, CLResponse $pluginResponse = null)
     {
@@ -75,6 +76,11 @@ class CLBasePlugin implements \cl\contract\CLPlugin
     {
         $this->clServiceRequest = $clServiceRequest;
         $this->pluginResponse = $pluginResponse;
+    }
+
+    public function setClSession($clSession): void
+    {
+        $this->clSession = $clSession;
     }
 
     /**

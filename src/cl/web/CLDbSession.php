@@ -62,8 +62,8 @@ class CLDbSession implements SessionHandlerInterface, CLInjectable
      * @since 5.4
      */
     public function destroy($session_id)
-    { error_log('destroying session');
-        return session_destroy();
+    {
+        return $this->activeRepo->delete('clsession', "sessionid = ?", array($session_id));;
     }
 
     /**
@@ -81,8 +81,9 @@ class CLDbSession implements SessionHandlerInterface, CLInjectable
      */
     public function gc($maxlifetime)
     {
-        $expired = ($date = new DateTime())->getTimestamp() - $maxlifetime;
-        return $this->activeRepo->delete('clsession', "logintime <= ?", array($expired));
+        $date = new DateTime();
+        $date = $date->modify('-'.$maxlifetime.' seconds');
+        return $this->activeRepo->delete('clsession', "logintime <= ?", array($date->format('Y-m-d H:i:s')));
     }
 
     /**
@@ -114,7 +115,11 @@ class CLDbSession implements SessionHandlerInterface, CLInjectable
      */
     public function read($session_id)
     {
-        $session = $this->activeRepo->read('clsession', "sessionid = ?", array($session_id));
+
+        $maxlifetime = ini_get("session.gc_maxlifetime");
+        $date = new DateTime();
+        $date = $date->modify('-'.$maxlifetime.' seconds');
+        $session = $this->activeRepo->read('clsession', "sessionid = ? and logintime > ?", array($session_id, $date->format('Y-m-d H:i:s')));
         return ($session == null || count($session) == 0) ? '' : base64_decode($session[0]->getData()['data']);
     }
 
@@ -138,7 +143,8 @@ class CLDbSession implements SessionHandlerInterface, CLInjectable
     public function write($session_id, $session_data)
     {
         $entity = new CLBaseEntity('clsession');
-        $entity->setData(['sessionid' => $session_id, 'data' => base64_encode($session_data)]);
+        $date = new DateTime();
+        $entity->setData(['sessionid' => $session_id, 'data' => base64_encode($session_data), 'logintime' => $date->format('Y-m-d H:i:s')]);
         $session = $this->activeRepo->read('clsession', "sessionid = ?", array($session_id));
         if ($session != null && count($session) == 1) {
             $entity->setId($session[0]->getData()['id']);

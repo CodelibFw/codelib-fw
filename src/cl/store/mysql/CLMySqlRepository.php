@@ -54,6 +54,10 @@ class CLMySqlRepository implements CLRepository {
         try {
             if ($connectionDetails != null) {
                 $this->connectionDetails = $connectionDetails;
+            } else {
+                if ($this->conn != null) {
+                    return true;
+                }
             }
             if ($this->connectionDetails == null || !is_array($this->connectionDetails)) {
                 _log('Repository not properly configured');
@@ -191,8 +195,18 @@ class CLMySqlRepository implements CLRepository {
         return 0;
     }
 
-    private function execute($cQuery, $inpParams = null) {
+    /**
+     * Mostly used internally by this class for CRUD operations on entities,
+     * but available for applications to use directly
+     * @param String $cQuery query to execute, which can contain placeholders such as ? or :(for named values)
+     * @param array $inpParams optional array with values to substitute the placeholders
+     * @return null on failure or the command so that any available values can be retrieved
+     */
+    public function execute($cQuery, $inpParams = null) {
         try {
+            if ($this->conn == null) {
+                $this->connect();
+            }
             $command = $this->conn->prepare($cQuery);
             if ($inpParams != null && is_array($inpParams)) {
                 $success = $command->execute($inpParams);
