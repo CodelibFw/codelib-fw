@@ -74,6 +74,9 @@ class Util {
      */
     public static function addExt(string $fileName, string $ext): string
     {
+        if ($ext[0] === '.') {
+            $ext = substr($ext, 1);
+        }
         if (strripos($fileName, '.'.$ext) === false) {
             $fileName = $fileName . '.'.$ext;
         }

@@ -41,6 +41,7 @@ class CLExceptionHandler
 {
     const ERROR_EXCEPTION = 1;
     const ERROR_ERROR = 2;
+    const ERROR_CLAPPEXCEPTION = 3;
 
     const ERROR_TYPE = 0;
     const ERROR_NO = 1;
@@ -52,8 +53,11 @@ class CLExceptionHandler
     use CLLog;
 
     public static function handle(Throwable $ex) : void {
+        if ($ex instanceof \cl\error\CLAppException) {
+            self::process([3, $ex->getCode(), $ex->getMessage(), $ex->getFile(), $ex->getLine(), $ex->getTraceAsString()]);
+            return;
+        }
         self::process([1, $ex->getCode(), $ex->getMessage(), $ex->getFile(), $ex->getLine(), $ex->getTraceAsString()]);
-
     }
 
     public static function error(int $errno, string $errstr, string $errfile, int $errline) : bool {
@@ -74,7 +78,7 @@ class CLExceptionHandler
             error_log('exception: '.'An error occurred. Error details: error number '. $errorCondition[self::ERROR_NO]. ', file '.
                 $errorCondition[self::ERROR_FILE].', line '.$errorCondition[self::ERROR_LINE].', message '.$errorCondition[self::ERROR_MESSAGE]);
         }
-        if ($errorCondition[self::ERROR_TYPE] == self::ERROR_EXCEPTION && isset($errorCondition[self::ERROR_TRACE])) {
+        if (in_array($errorCondition[self::ERROR_TYPE], [self::ERROR_EXCEPTION, self::ERROR_CLAPPEXCEPTION]) && isset($errorCondition[self::ERROR_TRACE])) {
             if ($logger != null) {
                 self::getLog()->error('Stack trace for above error is ' . $errorCondition[self::ERROR_TRACE]);
             } else {
@@ -83,10 +87,16 @@ class CLExceptionHandler
         }
         $haltOnError = E_ERROR;
         if (CLHtmlApp::$clapp != null) {
-            if ($errorCondition[self::ERROR_TYPE] == self::ERROR_EXCEPTION && $errorCondition[self::ERROR_NO] == 404) {
-                CLHtmlApp::$clapp->render404();
-            } else {
-                CLHtmlApp::$clapp->exceptionResponse('');
+            if (in_array($errorCondition[self::ERROR_TYPE], [self::ERROR_EXCEPTION, self::ERROR_CLAPPEXCEPTION])) {
+                if ($errorCondition[self::ERROR_NO] == 404) {
+                    CLHtmlApp::$clapp->render404();
+                } else {
+                    $msg = $errorCondition[self::ERROR_MESSAGE] ?? '';
+                    if ($errorCondition[self::ERROR_TYPE] == self::ERROR_EXCEPTION) {
+                        $msg = 'Unable to handle request. The specific details of the problem have been logged and submitted to the App Dev Team. Please try again later';
+                    }
+                    CLHtmlApp::$clapp->exceptionResponse($msg);
+                }
             }
             $haltOnError = $config->getHaltOnErrorLevel();
         }

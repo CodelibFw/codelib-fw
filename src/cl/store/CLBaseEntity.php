@@ -39,7 +39,6 @@ use cl\contract\CLEntity;
 class CLBaseEntity implements CLEntity {
     private $id, $entityName;
     private $data = array();
-    private $keyCount = 0;
 
     /**
      * CLBaseEntity constructor.
@@ -95,7 +94,6 @@ class CLBaseEntity implements CLEntity {
     public function setData(array $data)
     {
         $this->data = $data;
-        $this->keyCount = count($this->getKeys());
     }
 
     /**
@@ -131,7 +129,7 @@ class CLBaseEntity implements CLEntity {
      */
     public function getKeyCount(): int
     {
-        return $this->keyCount;
+        return count($this->getKeys());
     }
 
     public function setField($key, $value)

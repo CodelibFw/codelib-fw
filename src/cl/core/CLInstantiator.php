@@ -31,6 +31,7 @@ namespace cl\core;
 
 use cl\contract\CLInjectable;
 use cl\contract\CLLogger;
+use cl\web\CLHtmlApp;
 
 
 /**
@@ -122,7 +123,7 @@ class CLInstantiator
         return $comp;
     }
 
-    public static function iocCheck(&$object, $appConfig) {
+    public static function iocCheck(&$object, $appConfig, CLHtmlApp $app = null) {
         if ($object instanceof CLInjectable) {
             $dependencies = CLInstantiator::callMethod($object, 'dependsOn');
             if ($dependencies == null || !is_array($dependencies)) {
@@ -131,26 +132,32 @@ class CLInstantiator
                 _log('Injecting dependencies for '.get_class($object), CLLogger::DEBUG);
                 foreach($dependencies as $instantiationRequest) {
                     $repoConnDetails = null;
-                    if ($instantiationRequest->getKey() == ACTIVE_REPO) {
-                        $activeRepo = $appConfig->getActiveClRepository();
-                        if ($activeRepo == null) {
-                            throw new \Exception('Active repo is required but not defined');
+                    if ($instantiationRequest->getKey() == CL_PLUGIN) {
+                        $comp = $app->instantiatePlugin($instantiationRequest->getClassname(), 'run');
+                        $met = 'set'.ucfirst($instantiationRequest->asArray()[1]);
+                    } else {
+                        if ($instantiationRequest->getKey() == ACTIVE_REPO) {
+                            $activeRepo = $appConfig->getActiveClRepository();
+                            if ($activeRepo == null) {
+                                throw new \Exception('Active repo is required but not defined');
+                            }
+                            $instantiationRequest->setKey($activeRepo);
+                            $repoConnDetails = $appConfig->getRepoConnDetails($activeRepo);
+                            if ($repoConnDetails == null) {
+                                throw new \Exception('CL Repository ' . $activeRepo . ' not properly configured. Connection details are missing');
+                            }
+                            $instantiationRequest->setExClass('CLRepository');
                         }
-                        $instantiationRequest->setKey($activeRepo);
-                        $repoConnDetails = $appConfig->getRepoConnDetails($activeRepo);
-                        if ($repoConnDetails == null) {
-                            throw new \Exception('CL Repository '.$activeRepo.' not properly configured. Connection details are missing');
+                        $comp = CLInstantiator::getInstance($instantiationRequest);
+                        if ($comp == null) {
+                            throw new \Exception('Unable to find dependency ' . $instantiationRequest->getKey);
                         }
-                        $instantiationRequest->setExClass('CLRepository');
-                    }
-                    $comp = CLInstantiator::getInstance($instantiationRequest);
-                    if ($comp == null) {
-                        throw new \Exception('Unable to find dependency '.$instantiationRequest->getKey);
-                    }
-                    $met = 'set'.ucfirst($instantiationRequest->asArray()[0]);
-                    if ($repoConnDetails != null && $comp instanceof \cl\contract\CLRepository) {
-                        $comp->setConnectionDetails($repoConnDetails);
-                        $met = 'setActiveRepo';
+
+                        $met = 'set' . ucfirst($instantiationRequest->asArray()[0]);
+                        if ($repoConnDetails != null && $comp instanceof \cl\contract\CLRepository) {
+                            $comp->setConnectionDetails($repoConnDetails);
+                            $met = 'setActiveRepo';
+                        }
                     }
                     CLInstantiator::callMethod($object, $met, $comp);
                 }

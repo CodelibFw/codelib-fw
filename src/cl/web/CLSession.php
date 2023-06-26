@@ -43,7 +43,6 @@ class CLSession
     public function __construct(array &$session)
     {
         $this->session = &$session;
-        //register_shutdown_function(array($this, 'close'));
     }
 
     /**
@@ -68,15 +67,15 @@ class CLSession
      * Returns the value of the provided session key, if it exists, or null otherwise
      * @param $key
      */
-    public function get($key) {
-        return $this->session[$key] ?? null;
+    public function get($key, $default = null) {
+        return $this->session[$key] ?? $default;
     }
 
     public function destroy() {
         // only really cleaning the session variables, not actually destroying the session
         $this->put(CLFlag::IS_LOGGED_IN, false);
-        unset($this->session[CLFlag::USERNAME]);
-        unset($this->session[CLFlag::ROLE_ID]);
+        $this->session = array();
+        session_destroy();
     }
 
     public function close() {

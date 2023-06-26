@@ -33,6 +33,7 @@ use cl\core\CLDependency;
 use cl\core\CLFlag;
 use cl\messaging\email\Email;
 use cl\store\CLBaseEntity;
+use DateTime;
 
 /**
  * A simple user plugin provided by code-lib, which handles
@@ -84,16 +85,25 @@ class CLUserPlugin extends CLBasePlugin implements \cl\contract\CLPlugin, CLInje
         }
         if (password_verify($request['password'], $userdata[0]->getData()['password'])) {
             $login2session = $this->clServiceRequest->getCLConfig()->getAppConfig('logintosession');
+            // if null (user doesn't care) or true, add login details to the session
             if ($login2session == null || $login2session) {
                 $session = $this->clServiceRequest->getCLSession();
                 $session->regenerateId();
                 $session->put(CLFlag::IS_LOGGED_IN, true);
                 $session->put(CLFlag::USERNAME, $username);
-                $session->put(CLFlag::ROLE_ID, $userdata[0]->getData()['roleid'] ?? 1);
+                if (isset($userdata[0]->getData()['roleid'])) {
+                    $session->put(CLFlag::ROLE_ID, $userdata[0]->getData()['roleid'] ?? 1);
+                }
+                if ($session->get('lastlogin') != null) {
+                    $session->put('prevlogin', $session->get('lastlogin'));
+                }
             }
+            // we will keep track of the last login time as a session entry available to the app
+            $date = new DateTime();
+            $session->put('lastlogin', $date->format('Y-m-d H:i:s'));
             // notice that the payload (an array with user data) is wrapped in an array, as the method is expecting an array of payloads
             // notice also that we want to reset the view to the user dashboard, and we use the 'laf' key, within the $extraVars parameter for that
-            return $this->prepareResponse(_T('Welcome back, ' . $username), CLFlag::SUCCESS, null, null, [array('user' => $userdata[0]->getData())]);
+            return $this->prepareResponse(_T('Welcome back, ' . $username), CLFlag::SUCCESS, null, array('user' => $userdata[0]->getData()));
         }
         return $this->prepareResponse(_T('Unfortunately your details were not found'), CLFlag::FAILURE, 'u.login', $this->clServiceRequest->getCLRequest()->getRequest());
     }
@@ -105,6 +115,7 @@ class CLUserPlugin extends CLBasePlugin implements \cl\contract\CLPlugin, CLInje
         $this->logger->info('processing user logout');
         $session = $this->clServiceRequest->getCLSession();
         $session->destroy();
+        return $this->prepareResponse(_T('You have been successfully logged out'), CLFlag::SUCCESS);
     }
 
     /**
@@ -121,7 +132,7 @@ class CLUserPlugin extends CLBasePlugin implements \cl\contract\CLPlugin, CLInje
      * Used internally by the plugin, to prepare an User entity when a login request is received
      * @return CLBaseEntity|null
      */
-    private function requestToUserEntity(): ?CLBaseEntity
+    protected function requestToUserEntity(): ?CLBaseEntity
     {
         $entity = $this->requestToEntity('user', array('username', 'password', 'email'));
         if (isset($entity)) {
@@ -139,6 +150,14 @@ class CLUserPlugin extends CLBasePlugin implements \cl\contract\CLPlugin, CLInje
     {
         $this->activeRepo = $activeRepo;
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getActiveRepo()
+    {
+        return $this->activeRepo;
     }
 
     /**

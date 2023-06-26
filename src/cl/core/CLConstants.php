@@ -84,3 +84,4 @@ define('HTML_FILTER', 'html_filter');
 define('FILTER_SPECIAL_CHARS', 'filter_spec_chars');
 define('FILTER_REMOVE_TAGS', 'filter_tags');
 define('STATUS_CODE', 'statusCode');
+define('CL_PLUGIN', 'cl_plugin');
