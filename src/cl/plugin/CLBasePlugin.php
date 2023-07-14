@@ -66,8 +66,11 @@ class CLBasePlugin implements \cl\contract\CLPlugin
         $flowAction = $this->getFlowAction($clflow);
         $this->logger->debug('In '.get_class($this).', flowAction ='.$flowAction);
         if ($flowAction == null) {
+            if ($clflow !== null && is_string($clflow) && method_exists($this, $clflow)) {
+                return $this->$clflow();
+            }
             $this->logger->error('No specific flow entry found in '.get_class($this).'. Plugin execution cannot continue');
-            return $this->prepareResponse('Unfortunately registration failed', CLFlag::FAILURE,CLFlag::REG_PAGE, $clrequest->getRequest());
+            return $this->prepareResponse('Unabled to handle your request', CLFlag::FAILURE,CLFlag::REG_PAGE, $clrequest->getRequest());
         }
         return $this->$flowAction();
     }
@@ -120,7 +123,7 @@ class CLBasePlugin implements \cl\contract\CLPlugin
     }
 
     /**
-     * This is a (optional) way of finding what plugin method to call, using a .fnname in the clkey or flow,
+     * This is a (optional) way of finding what plugin method to call, using a /fnname in the clkey or flow,
      * to identify quickly what method to call. Of course plugins can handle this in different ways.
      * For instance, instead a plugin could keep a map of flows (keys) they intercept or participate on, and the funcions that handles
      * that flow.
@@ -185,6 +188,19 @@ class CLBasePlugin implements \cl\contract\CLPlugin
         }
         $entity->setData($data);
         return $entity;
+    }
+
+    protected function requestToClassInstance($instance, array $fieldKeys, array $optional = null) {
+        $clrequest = $this->clServiceRequest->getCLRequest()->getRequest();
+        foreach($fieldKeys as $key) {
+            $name = 'set'.ucfirst($key);
+            if (isset($clrequest[$key])) {
+                $instance->$name($clrequest[$key]);
+            } elseif (isset($optional) && !isset($optional[$name])) {
+                $this->lastError = $name. ' is required, but it was not provided';
+                return null;
+            }
+        }
     }
 
     /**
