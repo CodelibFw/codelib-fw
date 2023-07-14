@@ -127,7 +127,7 @@ class CLMySqlRepository implements CLRepository {
             $rows = array();
             $row = $command->fetch(PDO::FETCH_ASSOC);
             while ($row) {
-                $entity = new CLBaseEntity($entityName, $row['id']);
+                $entity = new CLBaseEntity($entityName, $row['id'] ?? null);
                 $entity->setData($row);
                 $rows[] = $entity;
                 $row = $command->fetch(PDO::FETCH_ASSOC);

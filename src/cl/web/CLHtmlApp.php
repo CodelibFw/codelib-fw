@@ -242,13 +242,27 @@ class CLHtmlApp implements CLApp
     /**
      * Adds a Plugin to this App. A Plugin is expected to implement the CLPlugin interface, and the containing file
      * should be placed in the plugin folder of the app.
-     * @param string the flow key the plugin will hook into. As an example, a plugin could register for user/register,
-     *        to handle user registration, or maybe for user.*, to handle all activities in the user flow. See:
-     *        @{CLRoute::create} for more options
+     * @param mixed $key the flow key (route) the plugin will hook into. If array, then specifies sevral keys (routes)
+     * the Plugin handles.
+     * As an example, a plugin could register for user/register, to handle user registration,
+     * or maybe for user.*, to handle all activities in the user flow.
+     * See: @{CLRoute::create} for more options
      * @param string $plugin classname (string) of a given plugin class
      * @return CLHtmlApp
      */
-    public function addPlugin($key, $plugin, $pluginMethod = 'run', $httpMethods = [], $roles = [], $httpsOnly = false) {
+    public function addPlugin($key, $plugin, $pluginMethod = 'run', $httpMethods = [], $roles = [], $httpsOnly = false)
+    {
+        if (is_array($key)) {
+            foreach ($key as $flowKey) {
+                $this->addPluginRoute($flowKey, $plugin, $pluginMethod, $httpMethods, $roles, $httpsOnly);
+            }
+        } else {
+            $this->addPluginRoute($key, $plugin, $pluginMethod, $httpMethods, $roles, $httpsOnly);
+        }
+        return $this;
+    }
+
+    private function addPluginRoute($key, $plugin, $pluginMethod = 'run', $httpMethods = [], $roles = [], $httpsOnly = false) {
         if ($plugin instanceof \cl\contract\CLPlugin) {
             $pluginRef = 'cl.ref.'.count($this->inlPlugins);
             $this->inlPlugins[$pluginRef] = &$plugin;
@@ -770,9 +784,14 @@ class CLHtmlApp implements CLApp
 
     private function setDefaultErrorPage(): CLHtmlApp
     {
-        if (isset($this->pages[CLHtmlApp::ERRORPAGE])) { return $this; } // only set, if not already set by app
+        $element = isset($this->pages[CLHtmlApp::ERRORPAGE]) ? $this->pages[CLHtmlApp::ERRORPAGE] : null;
+        if ($element != null) { return $this; }
+        if (isset($this->pageDef[CLHtmlApp::ERRORPAGE])) {
+            $element = $this->mkPage(CLHtmlApp::ERRORPAGE);
+        }
+        if ($element != null) { return $this; }
         $errorPage = new CLHtmlPage(null, '');
-        $errorPage->setLookandFeel('bt53')->addElement('errorpage.php')->addElement('bt53footer.php');
+        $errorPage->addElement('errorpage.php');
         $this->setErrorPage($errorPage);
         return $this;
     }
@@ -1083,7 +1102,10 @@ class CLHtmlApp implements CLApp
     }
 
     private function getErrorPage() {
-        $element = $this->pages[CLHtmlApp::ERRORPAGE] ?? null;
+        $element = isset($this->pages[CLHtmlApp::ERRORPAGE]) ? $this->pages[CLHtmlApp::ERRORPAGE] : null;
+        if ($element === null && isset($this->pageDef[CLHtmlApp::ERRORPAGE])) {
+            $element = $this->mkPage(CLHtmlApp::ERRORPAGE);
+        }
         if ($element == null) {
             $this->setDefaultErrorPage();
             $element = $this->pages[CLHtmlApp::ERRORPAGE] ?? null;

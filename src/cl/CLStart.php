@@ -46,7 +46,7 @@ class CLStart
     /**
      * CLStart constructor.
      */
-    public function __construct()
+    public function __construct($addtionalNs = null)
     {
 
         // define vendor locations
@@ -74,6 +74,11 @@ class CLStart
         $this->loader->addNamespace($this->appNs, BASE_DIR);
         $this->loader->addNamespace('cl\ui\contract', CL_DIR . 'cl/ui/interface');
         $this->loader->addNamespace('cl\contract', CL_DIR . 'cl/interface');
+        if (isset($addtionalNs) && count($addtionalNs) > 0) {
+            foreach ($addtionalNs as $prefix => $basedir) {
+                $this->loader->addNamespace($prefix, $basedir);
+            }
+        }
         // set our exception and error handler
         set_exception_handler(['\cl\core\CLExceptionHandler', 'handle']);
         set_error_handler(['\cl\core\CLExceptionHandler', 'error']);
@@ -97,7 +102,11 @@ class CLStart
     }
 
 }
-$start = new CLStart;
+// optional additional namespaces the app might require, for instance for an external API
+// example: before requiring CLStart, create the $appNsMap like this but with your specific ns:
+// $appNsMap = ['OpenAPI\Client' => 'lib/api'];
+// somewhere before the require CL_DIR . 'cl/CLStart.php';
+$start = new CLStart($appNsMap ?? []);
 // constants
 require_once CL_DIR . 'cl/core/CLConstants.php';
 // individual utility functions that will be available at a global scope
