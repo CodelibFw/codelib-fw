@@ -77,6 +77,7 @@ define('HTTP_GET', 'get');
 define('HTTP_POST', 'post');
 define('HTTP_PUT', 'put');
 define('HTTP_HEAD', 'head');
+define('HTTP_JSON', 'json');
 define('CURRENT_TIMEZONE', 'cl_time_zone');
 define('CLMYSQL', 'mysql');
 define ('CLREDIS', 'clredis');

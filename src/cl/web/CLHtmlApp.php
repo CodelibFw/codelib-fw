@@ -577,7 +577,7 @@ class CLHtmlApp implements CLApp
         return '';
     }
 
-    protected function render404() {
+    public function render404() {
         header(CLWebResponseCode::getResponseCode(404), true, 404);
         if ($this->notFoundPage == null) {
 
@@ -613,19 +613,11 @@ class CLHtmlApp implements CLApp
                 $isJson = false;
             }
         }
-        $element = isset($this->pages[$key]) ? $this->pages[$key] : null;
-        if ($element === null && isset($this->pageDef[$key])) {
-            $element = $this->mkPage($key);
-        }
+
         if ($isJson) {
             $element = new CLHtmlCtrl('');
         }
-        if ($this->pluginResponse == null) {
-            if (!isset($element)) {
-                throw new Exception('Page not found: '.$key);
-            }
-            return $element;
-        }
+
         $pgkey = $this->pluginResponse->getVar('page');
         if (isset($pgkey) && !$isJson) {
             if (isset($this->pages[$pgkey])) {
@@ -642,7 +634,13 @@ class CLHtmlApp implements CLApp
                 }
             }
             $key = $pgkey;
+        } else if (!$isJson) {
+            $element = isset($this->pages[$key]) ? $this->pages[$key] : null;
+            if ($element === null && isset($this->pageDef[$key])) {
+                $element = $this->mkPage($key);
+            }
         }
+
         $vars = $this->pluginResponse->getVars();
         if (count($vars) > 0) {
             if (!isset($element)) {
@@ -663,6 +661,7 @@ class CLHtmlApp implements CLApp
             }
         }
         if ($element === null) {
+            $this->cllogger->error('Page not found while processing Plugin responses for key: '.$key);
             $element = $this->getErrorPage();
             $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
         }
@@ -687,6 +686,23 @@ class CLHtmlApp implements CLApp
                 if (startsWith($pvarVal, 'session.')) {
                     $sessionKey = mb_substr($pvarVal, 8);
                     $this->pageDef[$key]['vars'][$pvar] = $this->clsession->get($sessionKey, '');
+                }
+                if (startsWith($pvarVal, 'plugin.')) {
+                    $varKey = mb_substr($pvarVal, 7);
+                    $lsqb = mb_strpos($varKey, '[');
+                    if ($lsqb !== false) {
+                        $rsqb = mb_strpos($varKey, ']');
+                        if ($rsqb !== false) {
+                            $varname = mb_substr($varKey, 0, $lsqb);
+                            $idxlg = $rsqb - $lsqb -1;
+                            $varidx = mb_substr($varKey, ($lsqb+1), $idxlg);
+                            $pluginVar = $this->pluginResponse->getVar($varname);
+                            $this->pageDef[$key]['vars'][$pvar] = $pluginVar[$varidx];
+                        }
+                    }
+                    if ($lsqb == false || $rsqb == false) {
+                        $this->pageDef[$key]['vars'][$pvar] = $this->pluginResponse->getVar($varKey);
+                    }
                 }
             }
             $page->setVars($this->pageDef[$key]['vars']);
