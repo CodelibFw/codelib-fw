@@ -93,13 +93,17 @@ class CLSimpleHttpClient implements \cl\contract\CLHttpClient
             $options['auth'] = $credentials;
         }
         if ($request->getMethod() == HTTP_POST) {
-            $options['form_params'] = $request->getData();
+            $options['form_params'] = $request->getData() ?? [];
+        } elseif ($request->getMethod() == HTTP_JSON) {
+            $options['json'] = $request->getData() ?? [];
+            $request->setMethod(HTTP_POST);
         }
+        $options['headers'] = $request->getHeaders();
         $options['verify'] = $request->getVerifyHost();
         $res = $client->request($request->getMethod(), $request->getUrl(), $options);
         $response = new CLBaseResponse();
         $response->setVar(STATUS_CODE, $res->getStatusCode()); // ex. '200'
-        if ($res->getStatusCode() == '200') {
+        if ($res->getStatusCode() == 200 || $res->getStatusCode() == 201) {
             $response->setHeader('content-type', $res->getHeader('content-type')[0]);
             $response->addPayload($res->getBody());
         }
@@ -155,7 +159,14 @@ class CLSimpleHttpClient implements \cl\contract\CLHttpClient
             $options[CURLOPT_SSL_VERIFYPEER] = false;
         }
         if ($request->getMethod() == HTTP_POST) {
-            $options[CURLOPT_POSTFIELDS] = $request->getData();
+            $options[CURLOPT_POSTFIELDS] = $request->getData() ?? [];
+        } elseif ($request->getMethod() == HTTP_JSON) {
+            $json = \json_encode($value, $options, $depth);
+            if (\JSON_ERROR_NONE !== \json_last_error()) {
+                throw new \Exception('Invalid json data in the request');
+            }
+            $options[CURLOPT_POSTFIELDS] = $json;
+            $request->setMethod(HTTP_POST);
         }
 
         curl_setopt_array($curlObj, $options);
