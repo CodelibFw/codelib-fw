@@ -92,7 +92,11 @@ class Email
         $mail->Username   = $emailConfig['username'];                     // SMTP username
         $mail->Password   = $emailConfig['password'];                               // SMTP password
         $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
-        $mail->Port       = 587;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
+        $mail->Port       = $emailConfig['port'] ?? 587;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
+        if ($mail->Port === 465) {
+            $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+        }
+        $mail->isHTML($email['isHtml'] ?? $emailConfig['isHtml'] ?? true);
         try {
             //Recipients
             $mail->setFrom($email['from']);
@@ -101,6 +105,7 @@ class Email
             $mail->Body = $email['message'];
             return $mail->send();
         } catch (Exception $e) {
+            _log('Error sending mail: '.$e->errorMessage(), \cl\contract\CLLogger::ERROR);
             return false;
         }
     }
