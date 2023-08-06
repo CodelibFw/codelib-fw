@@ -798,6 +798,15 @@ class CLHtmlApp implements CLApp
         return $this->appNs;
     }
 
+    public function addVars(array $vars): CLHtmlApp {
+        if (count($this->vars) == 0) {
+            $this->vars = $vars;
+            return $this;
+        }
+        $this->vars = array_merge($this->vars, $vars);
+        return $this;
+    }
+    
     private function setDefaultErrorPage(): CLHtmlApp
     {
         $element = isset($this->pages[CLHtmlApp::ERRORPAGE]) ? $this->pages[CLHtmlApp::ERRORPAGE] : null;
