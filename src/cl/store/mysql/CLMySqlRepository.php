@@ -101,7 +101,7 @@ class CLMySqlRepository implements CLRepository {
      */
     public function createAll(array $entities): bool
     {
-        if (isset($entities) || count($entities) == 0) return false;
+        if (!isset($entities) || count($entities) == 0) return false;
         $sql = $this->prepareInsertStatement($entities[0], count($entities));
         $vals = $entities[0]->getValues();
         $count = count($entities);
@@ -277,6 +277,7 @@ class CLMySqlRepository implements CLRepository {
         $sep = "";
         for ($i = 0; $i < $nrows; $i++) {
             $sql .=$sep."(" . $vals . ")";
+            $sep = ",";
         }
         return $sql;
     }
