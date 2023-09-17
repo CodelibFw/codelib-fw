@@ -65,7 +65,7 @@ class CLHtmlPage extends CLHtmlCtrl {
      * @param null $clrequest
      * @return CLHtmlBase
      */
-    public function setClrequest($clrequest): CLHtmlBase
+    public function setClrequest(&$clrequest): CLHtmlBase
     {
         $this->clrequest = $clrequest;
         $this->header->setClrequest($clrequest);
