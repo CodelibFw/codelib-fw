@@ -214,6 +214,7 @@ class CLHtmlApp implements CLApp
      * @return $this
      */
     public function addPage($key, array $lf, array $vars = [], $protection = 'none', bool $isdefault = false) {
+        if ($vars === null) { $vars = []; }
         if (is_array($key)) {
             $default = $isdefault;
             foreach ($key as $flowKey) {
@@ -806,7 +807,7 @@ class CLHtmlApp implements CLApp
         $this->vars = array_merge($this->vars, $vars);
         return $this;
     }
-    
+
     private function setDefaultErrorPage(): CLHtmlApp
     {
         $element = isset($this->pages[CLHtmlApp::ERRORPAGE]) ? $this->pages[CLHtmlApp::ERRORPAGE] : null;

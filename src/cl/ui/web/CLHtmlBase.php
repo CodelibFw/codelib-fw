@@ -199,9 +199,14 @@ abstract class CLHtmlBase implements CLUIControl {
      * @param null $clrequest
      * @return CLHtmlBase
      */
-    public function setClrequest($clrequest): CLHtmlBase
+    public function setClrequest(&$clrequest): CLHtmlBase
     {
-        $this->clrequest = $clrequest;
+        $this->clrequest = &$clrequest;
+        if (count($this->children) > 0) {
+            foreach ($this->children as $child) {
+                $child->setClrequest($clrequest);
+            }
+        }
         return $this;
     }
 
