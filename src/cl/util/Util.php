@@ -152,4 +152,9 @@ class Util {
         }
         return $className;
     }
+
+    public static function prepareMessage($fromEmail, $usermail, $subject, $message) {
+        return ['to' => $usermail, 'from' => $fromEmail, 'subject' => $subject, 'message' => $message];
+    }
+
 }

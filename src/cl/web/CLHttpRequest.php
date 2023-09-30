@@ -336,6 +336,13 @@ class CLHttpRequest implements CLRequest
         }
     }
 
+    public function getFilesInfo($key = null) {
+        if ($key !== null) {
+            return isset($this->files[$key]) ? $this->files[$key] : null;
+        }
+        return $this->files;
+    }
+
     private function moveUploadedFile($name, $tmp_name, $destination) {
         if ($name == null || $tmp_name == null) return;
         if (move_uploaded_file($tmp_name, $destination)) {

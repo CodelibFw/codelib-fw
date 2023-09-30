@@ -55,6 +55,8 @@ interface CLRequest
     public function isSecure();
 
     public function getAttachments();
+    
+    public function getFilesInfo($key = null);
 
     /**
      * Returns the $_POST array
