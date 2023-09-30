@@ -86,3 +86,6 @@ define('FILTER_SPECIAL_CHARS', 'filter_spec_chars');
 define('FILTER_REMOVE_TAGS', 'filter_tags');
 define('STATUS_CODE', 'statusCode');
 define('CL_PLUGIN', 'cl_plugin');
+define('CL_EXEC_RETURN_CODE', 1);
+define('CL_EXEC_RETURN_OUTPUT', 2);
+define('CL_EXEC_RETURN_ALL_DATA', 3);

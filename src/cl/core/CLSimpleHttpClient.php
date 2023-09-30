@@ -59,7 +59,7 @@ class CLSimpleHttpClient implements \cl\contract\CLHttpClient
         return $this->send($request);
     }
 
-    public function send(CLHttpClientRequest $request): CLResponse {
+    public function send(CLHttpClientRequest $request, $timeout = 100, $isAsync = false, callable $onComplete = null): CLResponse {
         $httpclient = CLHtmlApp::$clapp->getAppConfig()->getAppConfig('httpclient');
         $response = new CLBaseResponse();
         if ($httpclient == null) {
@@ -67,11 +67,11 @@ class CLSimpleHttpClient implements \cl\contract\CLHttpClient
             $response->setVar('status', '501');
             return $response;
         }
-        if ($httpclient == 'guzzle') {
-            return $this->sendWithGuzzle($request);
+        if ($isAsync || $httpclient == 'guzzle') {
+            return $this->sendWithGuzzle($request, $timeout, $isAsync, $onComplete);
         }
         if ($httpclient == 'curl') {
-            return $this->sendWithCurl($request);
+            return $this->sendWithCurl($request, $timeout);
         }
         return $response;
     }
@@ -85,7 +85,7 @@ class CLSimpleHttpClient implements \cl\contract\CLHttpClient
      * @param int $timeout
      * @return CLResponse
      */
-    private function sendWithGuzzle(CLHttpClientRequest $request, $timeout = 100): CLResponse {
+    private function sendWithGuzzle(CLHttpClientRequest $request, $timeout = 100, $isAsync = false, callable $onComplete = null): CLResponse {
         $client = new \GuzzleHttp\Client();
         $options = ['timeout' => $timeout];
         $credentials = $request->getCredentials();
@@ -100,14 +100,28 @@ class CLSimpleHttpClient implements \cl\contract\CLHttpClient
         }
         $options['headers'] = $request->getHeaders();
         $options['verify'] = $request->getVerifyHost();
-        $res = $client->request($request->getMethod(), $request->getUrl(), $options);
-        $response = new CLBaseResponse();
-        $response->setVar(STATUS_CODE, $res->getStatusCode()); // ex. '200'
-        if ($res->getStatusCode() == 200 || $res->getStatusCode() == 201) {
-            $response->setHeader('content-type', $res->getHeader('content-type')[0]);
-            $response->addPayload($res->getBody());
+        if ($isAsync) {
+            _log('async exec');
+            $promise = $client->requestAsync($request->getMethod(), $request->getUrl(), $options)
+                ->then(function ($response) {
+                    if (isset($onComplete)) {
+                        $onComplete($response->getBody());
+                    }
+            });
+            $promise->wait();
+            $response = new CLBaseResponse();
+            return $response;
+        } else {
+            $res = $client->request($request->getMethod(), $request->getUrl(), $options);
+            $response = new CLBaseResponse();
+            $response->setVar(STATUS_CODE, $res->getStatusCode()); // ex. '200'
+            if ($res->getStatusCode() == 200 || $res->getStatusCode() == 201) {
+                $response->setHeader('content-type', $res->getHeader('content-type')[0]);
+                $response->addPayload($res->getBody());
+            }
+            return $response;
         }
-        return $response;
+
     }
 
     /**

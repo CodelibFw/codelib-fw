@@ -40,5 +40,5 @@ interface CLHttpClient
 {
     public function get(CLHttpClientRequest $request): CLResponse;
     public function post(CLHttpClientRequest $request): CLResponse;
-    public function send(CLHttpClientRequest $request): CLResponse;
+    public function send(CLHttpClientRequest $request, $timeout = 100, $isAsync = false, callable $onComplete = null): CLResponse;
 }
