@@ -54,7 +54,7 @@ class CLTranslator
     }
 
     static public function translate($key, $vars = null, $locale = ['en'], $kb = "common") {
-        if ($key == null || $locale == null) { return $key; }
+        if ($key == null || $locale == null) { return CLTranslator::replace($key, $vars, $l); }
         foreach($locale as $l) {
             CLTranslator::checkKB($l, $kb);
             if (isset(CLTranslator::$translations[$l][$kb][$key])) {
