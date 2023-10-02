@@ -42,7 +42,7 @@ interface CLServiceRequest
 {
     public function getRequestedServer() : String;
     public function getRequestedService() : String;
-    public function getCLRequest() : CLRequest;
+    public function &getCLRequest() : CLRequest;
     public function getCLConfig() : CLConfig;
     public function getCLSession() : CLSession;
 }

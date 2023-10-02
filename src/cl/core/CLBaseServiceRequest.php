@@ -112,7 +112,7 @@ class CLBaseServiceRequest implements \cl\contract\CLServiceRequest
         return $this->requestedService;
     }
 
-    public function getCLRequest(): CLRequest
+    public function &getCLRequest(): CLRequest
     {
         return $this->clRequest;
     }

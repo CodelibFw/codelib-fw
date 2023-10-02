@@ -62,13 +62,13 @@ interface CLRequest
      * Returns the $_POST array
      * @return mixed
      */
-    public function getPost();
+    public function &getPost();
 
     /**
      * Returns the $_GET array
      * @return mixed
      */
-    public function getGet();
+    public function &getGet();
 
     /**
      * Returns the $_SERVER array
@@ -88,7 +88,7 @@ interface CLRequest
      */
     public function getMethod();
 
-    public function getRequest();
+    public function &getRequest();
 
     public function setRequest(array $request);
 
@@ -97,7 +97,7 @@ interface CLRequest
     /**
      * @return mixed
      */
-    public function getJsonData();
+    public function &getJsonData();
 
     /**
      * @param bool $isTextInput set to true if you are reading text data and require line ending translation. By default a binary stream is assumed

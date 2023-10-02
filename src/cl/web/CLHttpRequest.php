@@ -121,7 +121,7 @@ class CLHttpRequest implements CLRequest
      * Returns the $_POST array
      * @return mixed
      */
-    public function getPost() {
+    public function &getPost() {
         if ($this->isJson()) {
             return $this->getJsonData();
         } elseif (isset($this->post) && count($this->post) > 0) {
@@ -134,7 +134,7 @@ class CLHttpRequest implements CLRequest
      * Returns the $_GET array
      * @return mixed
      */
-    public function getGet() {
+    public function &getGet() {
         return $this->get;
     }
 
@@ -160,7 +160,7 @@ class CLHttpRequest implements CLRequest
         return $this->method;
     }
 
-    public function getRequest() {
+    public function &getRequest() {
         if ($this->isGet()) {
             return $this->getGet();
         } elseif ($this->isPost()) {
@@ -184,7 +184,7 @@ class CLHttpRequest implements CLRequest
     /**
      * @return mixed
      */
-    public function getJsonData()
+    public function &getJsonData()
     {
         if ($this->jsonData == null) {
             $this->jsonData = json_decode($this->post, true);
