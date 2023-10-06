@@ -42,8 +42,8 @@ class CLHttpRequest implements CLRequest
     const GET = 'get';
     const AJAX = 'ajax';
     const INPUT_STREAM = 'php://input';
-
-    private $get, $post, $server, $files;
+    // generally stores data from the $_POST array, $_GET array, etc...
+    private $getData, $postData, $server, $files;
     private $appConfig;
     private $jsonData;
     private $lang;
@@ -58,31 +58,31 @@ class CLHttpRequest implements CLRequest
      * @param $server
      */
     public function __construct($get, $post, $server, $files) {
-        $this->get = $get;
-        $this->post = $post;
+        $this->getData = $get;
+        $this->postData = $post;
         $this->server = $server;
         $this->files = $files;
         $this->lang = $this->setLang($server['HTTP_ACCEPT_LANGUAGE'] ?? null);
         $this->lang[0] = 'sp';
         if (($this->isPost() && $post == null) || $this->isPut()) {
-            $this->post = file_get_contents(CLHttpRequest::INPUT_STREAM);
+            $this->postData = file_get_contents(CLHttpRequest::INPUT_STREAM);
         }
     }
 
     public function get($key, $newVal = null) {
-        if ($this->get == null) { return null; }
+        if ($this->getData == null) { return null; }
         if (isset($newVal)) {
-            $this->get[$key] = $newVal;
+            $this->getData[$key] = $newVal;
         }
-        return $this->get[$key] ?? null;
+        return $this->getData[$key] ?? null;
     }
 
     public function post($key, $newVal = null) {
-        if ($this->post == null) { return null; }
+        if ($this->postData == null) { return null; }
         if (isset($newVal)) {
-            $this->post[$key] = $newVal;
+            $this->postData[$key] = $newVal;
         }
-        return $this->post[$key] ?? null;
+        return $this->postData[$key] ?? null;
     }
 
     public function isUserRequest() {
@@ -124,8 +124,8 @@ class CLHttpRequest implements CLRequest
     public function &getPost() {
         if ($this->isJson()) {
             return $this->getJsonData();
-        } elseif (isset($this->post) && count($this->post) > 0) {
-            return $this->post;
+        } elseif (isset($this->postData) && count($this->postData) > 0) {
+            return $this->postData;
         }
         return array();
     }
@@ -135,7 +135,7 @@ class CLHttpRequest implements CLRequest
      * @return mixed
      */
     public function &getGet() {
-        return $this->get;
+        return $this->getData;
     }
 
     /**
@@ -187,7 +187,7 @@ class CLHttpRequest implements CLRequest
     public function &getJsonData()
     {
         if ($this->jsonData == null) {
-            $this->jsonData = json_decode($this->post, true);
+            $this->jsonData = json_decode($this->postData, true);
         }
         return $this->jsonData;
     }
@@ -357,9 +357,9 @@ class CLHttpRequest implements CLRequest
     public function setRequest(array $request)
     {
         if ($this->isGet()) {
-            $this->get = $request;
+            $this->getData = $request;
         } elseif ($this->isPost() || $this->isJson()) {
-            $this->post = $request;
+            $this->postData = $request;
         }
     }
 }

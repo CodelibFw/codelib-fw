@@ -107,7 +107,7 @@ class CLRoute
         }
         if (endsWith($this->key, '*')) {
             $root = mb_substr($this->key, 0, mb_strlen($this->key)-1);
-            if (mb_strpos($key, $root) !== false) {
+            if (startsWith($key, $root) !== false) {
                 return $this->allowed();
             }
         } else {
