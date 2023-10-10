@@ -637,8 +637,8 @@ class CLHtmlApp implements CLApp
             $key = $pgkey;
         } else if (!$isJson) {
             $element = isset($this->pages[$key]) ? $this->pages[$key] : null;
-            if ($element === null && isset($this->pageDef[$key])) {
-                $element = $this->mkPage($key);
+            if ($element === null) {
+                $element = $this->findPage($key);
             }
         }
 
@@ -667,6 +667,29 @@ class CLHtmlApp implements CLApp
             $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
         }
         return $element;
+    }
+
+    private function findPage($key) {
+        if (isset($this->pageDef[$key])) { return $this->mkPage($key); }
+        $keys = array_keys($this->pageDef);
+        foreach ($keys as $k) {
+            if (CLRoute::isRegEx($k)) {
+                if (preg_match($k, $key) == 1) {
+                    return $this->mkPage($k);
+                }
+            }
+            if (endsWith($k, '*')) {
+                $root = mb_substr($k, 0, mb_strlen($k)-1);
+                if (startsWith($key, $root) !== false) {
+                    return $this->mkPage($k);
+                }
+            } else {
+                if ($k == $key) {
+                    return $this->mkPage($k);
+                }
+            }
+        }
+        return null;
     }
 
     private function mkPage($key) {

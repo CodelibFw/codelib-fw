@@ -214,7 +214,7 @@ class CLRoute
         return $this;
     }
 
-    private static function isRegEx($key) {
+    public static function isRegEx($key) {
         return startsWith($key,['/','^','#']);
     }
 

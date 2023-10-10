@@ -77,8 +77,8 @@ class CLMySqlRepository implements CLRepository {
             $this->dbname = $this->connectionDetails['dbname'];
             return true;
         }catch(PDOException $e) {
-            _log("Failed to connect to mysql server:" . $this->connectionDetails['server']);
-            _log($e->getMessage());
+            _log("Failed to connect to mysql server:" . $this->connectionDetails['server'], LOGERROR);
+            _log($e->getMessage(), LOGERROR);
             return false;
         }
     }
@@ -213,11 +213,17 @@ class CLMySqlRepository implements CLRepository {
             } else {
                 $success = $command->execute();
             }
-            if (!$success) return null;
+            if (!$success) {
+                $errMsg = $command->errorInfo();
+                if (isset($errMsg)) {
+                    _log($errMsg[0].':'.$errMsg[2], LOGERROR);
+                }
+                return null;
+            }
             return $command;
         }catch (PDOException $e) {
             _log("Failed to execute query:");
-            _log($e->getMessage());
+            _log($e->getMessage(), LOGERROR);
             return null;
         }
     }
