@@ -731,6 +731,12 @@ class CLHtmlApp implements CLApp
             }
             $page->setVars($this->pageDef[$key]['vars']);
         }
+        $csrfStatus = $this->getAppConfig()->getAppConfig(CSRFSTATUS);
+        if (isset($csrfStatus) && $csrfStatus) {
+            $this->configureCSRF($csrfStatus);
+            $csrf = $this->getCSRFValue();
+            $page->setVar('csrf', $csrf);
+        }
         $this->addElement($key, $page, $this->pageDef[$key]['default']);
         return $page;
     }

@@ -228,7 +228,7 @@ class CLConfig {
         $csrfTypes = [OFF, CLREQUEST, CLSESSION];
         if (! ( in_array($csrfStyle, $csrfTypes))) { throw new \Exception('Invalid CSRF style attempted in App configuration'); }
         $this->csrfStyle = $csrfStyle;
-        $this->addAppConfig('csrfStatus', $csrfStyle !== OFF);
+        $this->addAppConfig(CSRFSTATUS, $csrfStyle !== OFF);
         return $this;
     }
 
