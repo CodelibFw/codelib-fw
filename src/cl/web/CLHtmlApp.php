@@ -605,7 +605,7 @@ class CLHtmlApp implements CLApp
                 }
             }
             if ($element === null) {
-                return $this->pageErrorResponse($key);
+                return $this->getNotFoundPage();
             }
             return $element;
         }
@@ -666,15 +666,8 @@ class CLHtmlApp implements CLApp
             }
         }
         if ($element === null) {
-            return $this->pageErrorResponse($key);
+            return $this->getNotFoundPage();
         }
-        return $element;
-    }
-
-    private function pageErrorResponse($key) {
-        $this->cllogger->error('Page not found while processing Plugin responses for key: '.$key);
-        $element = $this->getErrorPage();
-        $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
         return $element;
     }
 
@@ -708,7 +701,7 @@ class CLHtmlApp implements CLApp
             $path = BASE_DIR . '/lookandfeel/html/' . $elm;
             if (!file_exists($path)) {
                 if (!file_exists(CL_DIR . '../resources/lookandfeel/html/' . $elm)) {
-                    throw new \Exception('Missing page '.$elm);
+                    throw new \Exception('Missing page '.$elm.' for defined key '.$key);
                 }
             }
         }
@@ -1169,7 +1162,7 @@ class CLHtmlApp implements CLApp
         return $element;
     }
 
-    private function getNotFoundPage() { _log('Rendering not found page');
+    private function getNotFoundPage() {
         $element = isset($this->pages[NOTFOUNDPAGE]) ? $this->pages[NOTFOUNDPAGE] : null;
         if ($element === null && isset($this->pageDef[NOTFOUNDPAGE])) {
             $element = $this->mkPage(NOTFOUNDPAGE);
