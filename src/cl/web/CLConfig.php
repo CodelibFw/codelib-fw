@@ -299,6 +299,22 @@ class CLConfig {
         return $this->emailConfig;
     }
 
+    public function setDomainName(string $domainName) {
+        $this->customConfig['domain'] = $domainName ?? '';
+    }
+
+    public function getDomainName() {
+        return $this->customConfig['domain'] ?? '';
+    }
+
+    public function setBaseUri(string $baseUri) {
+        $this->customConfig['baseuri'] = $baseUri ?? '';
+    }
+
+    public function getBaseUri() {
+        return $this->customConfig['baseuri'] ?? '/';
+    }
+
     /**
      * @return mixed
      */

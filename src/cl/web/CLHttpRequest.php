@@ -50,6 +50,7 @@ class CLHttpRequest implements CLRequest
     private $method;
     private $requestId;
     private $fileList = [];
+    private $nodata; // to still return a reference when no data is available
 
     /**
      * CLHttpRequest constructor. Receives the get, post and server global arrays
@@ -124,10 +125,10 @@ class CLHttpRequest implements CLRequest
     public function &getPost() {
         if ($this->isJson()) {
             return $this->getJsonData();
-        } elseif (isset($this->postData) && count($this->postData) > 0) {
+        } elseif (isset($this->postData) && is_array($this->postData) && count($this->postData) > 0) {
             return $this->postData;
         }
-        return array();
+        return $this->nodata;
     }
 
     /**
@@ -135,7 +136,10 @@ class CLHttpRequest implements CLRequest
      * @return mixed
      */
     public function &getGet() {
-        return $this->getData;
+        if (isset($this->getData)) {
+            return $this->getData;
+        }
+        return $this->nodata;
     }
 
     /**
@@ -168,7 +172,7 @@ class CLHttpRequest implements CLRequest
         } elseif ($this->isJson()) {
             return $this->getJsonData();
         } else {
-            return null;
+            return $this->nodata;
         }
     }
 
@@ -241,6 +245,10 @@ class CLHttpRequest implements CLRequest
             }
         } else {
             $this->requestId = $this->get($this->appConfig->getClKey()) ?? null;
+            if ($this->server['REQUEST_URI'] === $this->appConfig->getBaseUri()
+                || endsWith($this->server['REQUEST_URI'], 'index.php')) {
+                $this->requestId = DEFAULTPAGE;
+            }
         }
     }
 

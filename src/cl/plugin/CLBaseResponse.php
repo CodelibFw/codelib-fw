@@ -152,4 +152,8 @@ class CLBaseResponse implements CLResponse {
     {
         return $this->headers;
     }
+
+    public function pluginsExecuted() {
+        return (count($this->response) > 0);
+    }
 }

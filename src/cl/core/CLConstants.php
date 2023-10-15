@@ -92,3 +92,6 @@ define('CL_PLUGIN', 'cl_plugin');
 define('CL_EXEC_RETURN_CODE', 1);
 define('CL_EXEC_RETURN_OUTPUT', 2);
 define('CL_EXEC_RETURN_ALL_DATA', 3);
+define('DEFAULTPAGE', 'cl_default_page');
+define('ERRORPAGE', 'cl_error_page');
+define('NOTFOUNDPAGE', 'cl_not_found_page');

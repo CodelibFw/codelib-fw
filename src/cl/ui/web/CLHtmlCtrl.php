@@ -330,7 +330,7 @@ class CLHtmlCtrl extends CLHtmlBase
             }
         } elseif (file_exists(CL_DIR . '../resources/lookandfeel/html/' . $cllafentry)) {
             include_once(CL_DIR . '../resources/lookandfeel/html/' . $cllafentry);
-        }
+        } else throw new \Exception("Missing page: ".$cllafentry);
     }
 
     private function loadLAFConfig($path, $prefix) {

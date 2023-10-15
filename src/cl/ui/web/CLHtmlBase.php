@@ -235,6 +235,18 @@ abstract class CLHtmlBase implements CLUIControl {
         return $this;
     }
 
+    /**
+     * Adds or updates a variable to the control
+     * @param string $key
+     * @param $value
+     */
+    public function setVar(string $key, $value) {
+        if (!isset($this->vars)) { $this->vars = [$key => $value];}
+        else {
+            $this->vars[$key] = $value;
+        }
+    }
+
     public function getVar(string $key) {
         if ($this->vars == null) { return null; }
         return $this->vars[$key] ?? null;

@@ -447,7 +447,6 @@ class CLHtmlApp implements CLApp
     {
         if ($introspection) { return $this->runInspection(); }
         $startTime = microtime(true);
-        $this->setDefaultErrorPage();
         $this->setDefaults();
         if ($this->isUserRequest()) {
             $this->clkey = $this->getAppConfig()->getClKey();
@@ -463,6 +462,8 @@ class CLHtmlApp implements CLApp
             }
             if ($requestId == 'knowthyself') {
                 return $this->runInspection();
+            } else if ($requestId == DEFAULTPAGE) {
+                $requestId = $this->defaultPage;
             }
             if (!$this->callRequestFilters($this->clrequest->getMethod())) {
                 $duration = microtime(true) - $startTime;
@@ -478,18 +479,8 @@ class CLHtmlApp implements CLApp
             $this->getCllogger()->debug('Execution (Options) completed in ' . $duration . ' seconds');
             echo $this->render($this->defaultPage);
         } else {
-            if (!isset($this->defaultPage)) {
-                $duration = microtime(true) - $startTime;
-                $this->getCllogger()->debug('Execution completed in ' . $duration . ' seconds');
-                throw new \cl\error\CLResourceFoundException('No default page to render in App');
-            }
-            if (!$this->callRequestFilters($this->clrequest->getMethod())) {
-                $duration = microtime(true) - $startTime;
-                $this->getCllogger()->debug('Execution completed in ' . $duration . ' seconds');
-                throw new CLAppException('Request rejected as invalid');
-            }
-            $this->dispatch($this->defaultPage);
-            echo $this->render($this->defaultPage);
+            echo $this->getNotFoundPage()->toHtml(null);
+
         }
         $duration = microtime(true) - $startTime;
         $this->getCllogger()->debug('Execution completed in ' . $duration . ' seconds');
@@ -580,19 +571,13 @@ class CLHtmlApp implements CLApp
 
     public function render404() {
         header(CLWebResponseCode::getResponseCode(404), true, 404);
-        if ($this->notFoundPage == null) {
-
-            return '';
-        }
-        $element = isset($this->pages[$this->notFoundPage]) ? $this->pages[$this->notFoundPage] : null;
-        if ($element === null && isset($this->pageDef[$this->notFoundPage])) {
-            $element = $this->mkPage($this->notFoundPage);
-        }
+        $element = $this->getNotFoundPage();
         return $element->toHtml(null);
     }
 
-    protected function renderErrorPage() {
-
+    protected function renderErrorPage(array $vars = null) { _log('Rendering error page');
+        ob_end_clean();
+        ob_start();
         $element = $this->getErrorPage();
         $statusCode = $element->getVar(STATUS_CODE);
         if ($statusCode != null) {
@@ -601,11 +586,30 @@ class CLHtmlApp implements CLApp
                 header($responseCode, true, 404);
             }
         }
+        if (isset($vars)) {
+            $element->addVars($vars);
+        }
         return $element->toHtml(null);
     }
 
     protected function processPluginResponses($key): ?CLHtmlCtrl
     {
+        if (!$this->pluginResponse->pluginsExecuted()) {
+            $isJson = $this->clrequest->isJson() || $this->clrequest->acceptJson();
+            if ($isJson) {
+                $element = new CLHtmlCtrl('');
+            } else {
+                $element = isset($this->pages[$key]) ? $this->pages[$key] : null;
+                if ($element === null) {
+                    $element = $this->findPage($key);
+                }
+            }
+            if ($element === null) {
+                return $this->pageErrorResponse($key);
+            }
+            return $element;
+        }
+        // if plugin execution happened
         $isJson = $this->clrequest->isJson() || $this->clrequest->acceptJson() || ('json' === $this->pluginResponse->getVar(CLFlag::PRODUCES));
         if ($isJson) {
             // if json according to request, but the Plugin changes it, we go with the Plugin
@@ -621,21 +625,21 @@ class CLHtmlApp implements CLApp
 
         $pgkey = $this->pluginResponse->getVar('page');
         if (isset($pgkey) && !$isJson) {
-            if (isset($this->pages[$pgkey])) {
-                $element = $this->pages[$pgkey];
-            } else {
-                if (isset($this->pageDef[$pgkey])) {
-                    $element = $this->mkPage($pgkey);
-                }
-                if ($element === null) {
-                    $element = $this->getErrorPage();
-                    $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
-                    $this->cllogger->info('Page ' . $pgkey . ', requested by Plugin, does not exist');
-                    return $element;
-                }
+            // the plugin has set a page to render, which could be or not the same as the default rendering page for
+            // this request
+            $element = isset($this->pages[$pgkey]) ? $this->pages[$pgkey] : null;
+            if ($element === null) {
+                $element = $this->findPage($pgkey);
+            }
+            if ($element === null) {
+                $element = $this->getErrorPage();
+                $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
+                $this->cllogger->info('Page ' . $pgkey . ', requested by Plugin, does not exist');
+                return $element;
             }
             $key = $pgkey;
         } else if (!$isJson) {
+            // not json and the plugin did not set a page to render
             $element = isset($this->pages[$key]) ? $this->pages[$key] : null;
             if ($element === null) {
                 $element = $this->findPage($key);
@@ -662,10 +666,15 @@ class CLHtmlApp implements CLApp
             }
         }
         if ($element === null) {
-            $this->cllogger->error('Page not found while processing Plugin responses for key: '.$key);
-            $element = $this->getErrorPage();
-            $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
+            return $this->pageErrorResponse($key);
         }
+        return $element;
+    }
+
+    private function pageErrorResponse($key) {
+        $this->cllogger->error('Page not found while processing Plugin responses for key: '.$key);
+        $element = $this->getErrorPage();
+        $element->addVars(array('feedback' => 'Sorry, an internal error has ocurred and the app is unable to fulfill your request'));
         return $element;
     }
 
@@ -692,12 +701,26 @@ class CLHtmlApp implements CLApp
         return null;
     }
 
-    private function mkPage($key) {
+    private function checkLAndFElements($key) {
+        $n = count($this->pageDef[$key]['lf']);
+        for ($i=0; $i < $n; $i++) {
+            $elm = Util::addExt($this->pageDef[$key]['lf'][$i], '.php');
+            $path = BASE_DIR . '/lookandfeel/html/' . $elm;
+            if (!file_exists($path)) {
+                if (!file_exists(CL_DIR . '../resources/lookandfeel/html/' . $elm)) {
+                    throw new \Exception('Missing page '.$elm);
+                }
+            }
+        }
+    }
+
+    private function mkPage($key) { _log('Mking page: '.$key);
         $page = new CLHtmlPage(null, '');
         $accesslevel = $this->pageDef[$key]['protection'];
         if ($accesslevel !== 'none' && !$this->clsession->get(CLFlag::IS_LOGGED_IN)) {
             throw new CLAppException('Access to page denied. Please login first');
         }
+        $this->checkLAndFElements($key);
         $page->setLookandFeel($this->pageDef[$key]['lf'][0]);
         $n = count($this->pageDef[$key]['lf']);
         if ($n > 1) {
@@ -731,11 +754,12 @@ class CLHtmlApp implements CLApp
             }
             $page->setVars($this->pageDef[$key]['vars']);
         }
-        $csrfStatus = $this->getAppConfig()->getAppConfig(CSRFSTATUS);
-        if (isset($csrfStatus) && $csrfStatus) {
-            $this->configureCSRF($csrfStatus);
-            $csrf = $this->getCSRFValue();
-            $page->setVar('csrf', $csrf);
+        if ($key !== ERRORPAGE && $key !== NOTFOUNDPAGE) {
+            $csrfStatus = $this->getAppConfig()->getAppConfig(CSRFSTATUS);
+            if (isset($csrfStatus) && $csrfStatus) {
+                $csrf = $this->getCSRFValue();
+                $page->setVar('csrf', $csrf);
+            }
         }
         $this->addElement($key, $page, $this->pageDef[$key]['default']);
         return $page;
@@ -792,7 +816,7 @@ class CLHtmlApp implements CLApp
     {
         if ($page != null) {
             $page->addVars(['status' => 'failure']);
-            $this->addElement(CLHtmlApp::ERRORPAGE, $page);
+            $this->addElement(ERRORPAGE, $page);
         }
         return $this;
     }
@@ -834,20 +858,6 @@ class CLHtmlApp implements CLApp
             return $this;
         }
         $this->vars = array_merge($this->vars, $vars);
-        return $this;
-    }
-
-    private function setDefaultErrorPage(): CLHtmlApp
-    {
-        $element = isset($this->pages[CLHtmlApp::ERRORPAGE]) ? $this->pages[CLHtmlApp::ERRORPAGE] : null;
-        if ($element != null) { return $this; }
-        if (isset($this->pageDef[CLHtmlApp::ERRORPAGE])) {
-            $element = $this->mkPage(CLHtmlApp::ERRORPAGE);
-        }
-        if ($element != null) { return $this; }
-        $errorPage = new CLHtmlPage(null, '');
-        $errorPage->addElement('errorpage.php');
-        $this->setErrorPage($errorPage);
         return $this;
     }
 
@@ -898,14 +908,7 @@ class CLHtmlApp implements CLApp
         $this->clrequest->moveAttachments();
         // configure session handling
         $this->configureSessionHandling();
-        // configure CSRF protection
-        $csrfStatus = $this->getAppConfig()->getAppConfig(CSRFSTATUS);
-        if (isset($csrfStatus) && $csrfStatus) {
-            $this->configureCSRF($csrfStatus);
-            $csrfExpires = $this->getAppConfig()->getAppConfig('csrfDuration', 1800);
-            $csrf = $this->getCSRFValue();
-            setcookie(CSRF_KEY, $csrf, time()+$csrfExpires);
-        }
+
         CLInstantiator::addRef('emailService', 'cl\messaging\email\Email', null, [$this->getAppConfig()]);
         CLInstantiator::addRef('httpclient', 'cl\core\CLSimpleHttpClient', '\cl\contract\CLHttpClient');
         $this->addFilters();
@@ -942,15 +945,6 @@ class CLHtmlApp implements CLApp
         }
         if ($htmlFilterCfg['phase'] == CLRESPONSE || $htmlFilterCfg['phase'] == ALL) {
             $this->addResponseFilter(HTML_FILTER, 'CLHtmlFilter');
-        }
-    }
-
-    private function configureCSRF($csrfStatus) {
-        if (count($this->pages) > 0) {
-            foreach ($this->pages as $key => $element) {
-                $csrf = $this->getCSRFValue();
-                $element->addVars(['csrf' => $csrf]);
-            }
         }
     }
 
@@ -1124,6 +1118,8 @@ class CLHtmlApp implements CLApp
         $val = $this->csrfToken;
         if (isset($this->csrfToken) && strlen($this->csrfToken) > 0) { return $this->csrfToken; }
         $this->csrfToken = Util::genAlphaNumRndVal(15);
+        $csrfExpires = $this->getAppConfig()->getAppConfig('csrfDuration', 1800);
+        setcookie(CSRF_KEY, $this->csrfToken, time()+$csrfExpires);
         return $this->csrfToken;
     }
 
@@ -1131,7 +1127,7 @@ class CLHtmlApp implements CLApp
         $headers = $this->pluginResponse->getHeaders();
         if ($headers != null && count($headers) > 0) {
             foreach ($headers as $header => $value) {
-                header($header.': '.$value);error_log('sending header: '.$header.': '.$value);
+                header($header.': '.$value);
             }
         }
         return '';
@@ -1151,19 +1147,36 @@ class CLHtmlApp implements CLApp
      */
     public function exceptionResponse($msg) {
         $this->pluginResponses = array();
-        $element = $this->getErrorPage();
-        $element->addVars(array("feedback" => $msg ?? 'Unfortunately an internal error occurred'));
-        echo $this->renderErrorPage();
+        echo $this->renderErrorPage(array("feedback" => $msg ?? 'Unfortunately an internal error occurred'));
+    }
+
+    private function setDefaultErrorPage(): CLHtmlApp
+    {
+        $errorPage = new CLHtmlPage(null, '');
+        $errorPage->addElement('errorpage.php');
+        $this->setErrorPage($errorPage);
+        return $this;
     }
 
     private function getErrorPage() {
-        $element = isset($this->pages[CLHtmlApp::ERRORPAGE]) ? $this->pages[CLHtmlApp::ERRORPAGE] : null;
-        if ($element === null && isset($this->pageDef[CLHtmlApp::ERRORPAGE])) {
-            $element = $this->mkPage(CLHtmlApp::ERRORPAGE);
+        $element = isset($this->pages[ERRORPAGE]) ? $this->pages[ERRORPAGE] : null;
+        if ($element === null && isset($this->pageDef[ERRORPAGE])) {
+            $element = $this->mkPage(ERRORPAGE);
         }
         if ($element == null) {
-            $this->setDefaultErrorPage();
-            $element = $this->pages[CLHtmlApp::ERRORPAGE] ?? null;
+            $element = $this->setDefaultErrorPage();
+        }
+        return $element;
+    }
+
+    private function getNotFoundPage() { _log('Rendering not found page');
+        $element = isset($this->pages[NOTFOUNDPAGE]) ? $this->pages[NOTFOUNDPAGE] : null;
+        if ($element === null && isset($this->pageDef[NOTFOUNDPAGE])) {
+            $element = $this->mkPage(NOTFOUNDPAGE);
+        }
+        if ($element == null) {
+            $element = new CLHtmlPage(null, '');
+            $element->addElement('notfoundpage.php');
         }
         return $element;
     }
