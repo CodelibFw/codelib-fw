@@ -222,4 +222,8 @@ class CLBasePlugin implements \cl\contract\CLPlugin
     protected function validateEmail($email) : bool {
         return (filter_var($email, FILTER_VALIDATE_EMAIL) !== false);
     }
+
+    protected function getAppConfig($key, $default = null) {
+        return $this->clServiceRequest->getCLConfig()->getAppConfig($key, $default);
+    }
 }

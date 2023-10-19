@@ -64,7 +64,6 @@ class CLHttpRequest implements CLRequest
         $this->server = $server;
         $this->files = $files;
         $this->lang = $this->setLang($server['HTTP_ACCEPT_LANGUAGE'] ?? null);
-        $this->lang[0] = 'sp';
         if (($this->isPost() && $post == null) || $this->isPut()) {
             $this->postData = file_get_contents(CLHttpRequest::INPUT_STREAM);
         }
@@ -253,22 +252,33 @@ class CLHttpRequest implements CLRequest
     }
 
     private function setLang($lang) {
-        if ($lang == null || $lang = '*') { return ['en']; }
+        // if not specified or * return a few common ones
+        if ($lang == null || $lang == '*') { return ['en','sp','fr', 'de', 'ja', 'ko', 'zh', 'ar', 'he', 'ru', 'uk']; }
         $lang = explode(',', $lang);
         if ($lang == null || count($lang) == 0) { return ['en']; }
-        $larray = [];
+        $larray = [];$keys = [];
         foreach ($lang as $l) {
-            if ($l == '*') {$larray[] = 'en'; }
+            if ($l == '*') { return ['en','sp','fr', 'de', 'ja', 'ko', 'zh', 'ar', 'he', 'ru', 'uk']; }
             if (mb_strlen($l) == 2) {
-                $larray[] = $l;
+                if (!array_key_exists($l, $keys)) {
+                    $larray[] = $l;
+                    $keys[$l] = 1;
+                }
             } elseif (mb_strpos($l, '-') !== false) {
                 $p = mb_strpos($l, '-');
-                $larray[] = mb_substr($l, 0, $p);
+                $lcode = mb_substr($l, 0, $p);
+                if (!array_key_exists($lcode, $keys)) {
+                    $larray[] = $lcode;$keys[$lcode] = 1;
+                }
             } elseif (mb_strpos($l, ';') !== false) {
                 $p = mb_strpos($l, ';');
-                $larray[] = mb_substr($l, 0, $p);
+                $lcode = mb_substr($l, 0, $p);
+                if (!array_key_exists($lcode, $keys)) {
+                    $larray[] = $lcode;$keys[$lcode] = 1;
+                }
             }
         }
+        return $larray;
     }
 
     /**

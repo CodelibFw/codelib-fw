@@ -60,7 +60,7 @@ class CLConfig {
         if (isset($this->emailLib)) {
             $this->emailConfig['emailLib'] = $this->emailLib;
         }
-
+        $this->setClKey("clkey");
     }
 
     /**
@@ -70,6 +70,7 @@ class CLConfig {
      */
     public function setClKey(string $clkey) : CLConfig {
         $this->clkey = $clkey;
+        $this->customConfig['clkey'] = $clkey;
         return $this;
     }
 

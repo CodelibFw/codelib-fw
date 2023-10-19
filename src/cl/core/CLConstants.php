@@ -66,6 +66,7 @@ define('EXTENSIONS_FOLDER', 'cl_ext_folder');
 define('CORS', 'cl_cors');
 define('EMAIL_LIB', 'cl_email_lib');
 define('MAIL_HOST', 'cl_mail_host');
+define('EMAIL_SERVICE', 'emailService');
 define('AUTO_CONFIG', 'cl_auto_config');
 define('ACTIVE_REPO', 'cl_active_repo');
 define('SESSION_HANDLER', 'session_handler');
