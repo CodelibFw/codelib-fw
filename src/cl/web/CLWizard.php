@@ -54,6 +54,6 @@ class CLWizard
     }
 
     private function versionPass() {
-        return (version_compare(PHP_VERSION, '7.2', '>='));
+        return (version_compare(PHP_VERSION, '7.4', '>='));
     }
 }
