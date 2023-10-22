@@ -32,6 +32,7 @@ namespace cl\tool;
  * Class Diagnostics
  * Utility class that runs diagnostics or self-analysis for a CL app. To run it, set introspection to true, in the run
  * method of your App. It will log, or alternatively, save a report for your App instead of running it.
+ * Work in progress. Needs an update after latest code changes in Codelib
  * @package cl\tool
  */
 class Diagnostics {

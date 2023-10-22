@@ -5,19 +5,29 @@
 **Quickly create easy to maintain web applications, with a variety of technologies: 
 PHP 7.4+, MySql, VueJs, Bootstrap, or other.**
 
-- Quickly create PHP Web Apps programmatically with CL components, or in a more traditional style
-- Create Plugins/Services for your app, and use Dependency Injection to wire all its dependencies
-- Replace different parts of the framework as you want without a complications
+We use this simple framework for our own Apps, and we want it to be a **powerful** but **very simple to learn and use PHP Framework**.<br>
+Using a combination of Framework features and Samples created for the Framework, we want anyone using it to be able to launch web applications within 
+7 days, not in weeks or months.<br>
+As a Framework, it is likely to be always work in progress, as it incorporates new technologies, features and security measures.<br>
+Another goal of the framework is to make it easy to customize so that users can not only extend it with Plugins, but also 
+easily replace core functionality, conventions and terminology.<br> 
+Among its features:<br>
+- Quickly create static and dynamic PHP Web Apps. 
+- Create Plugins/Services for your app, and use Dependency Injection to wire all its dependencies.
+- Replace different parts of the framework as you want without complications
 - Easily create and reuse your own components
-- Easy collaboration among team members
-- Create complex workflows
-- Easily make sense of how it works
+- Easily add filters to the request, response or specific functionality within your App.
+- Easy collaboration among team members, with clear separation of concerns and conventions.
+- Create complex workflows, with flow keys processed by one or many sync or async services.
+- Easily make sense of how it works, even though its documentation is very limited at the moment.
 
 #### Samples
 
 Take a look at our <a href="https://github.com/codelibfw/cl-samples">samples</a> released under the Apache license. You can
 use any of the samples as a starting point for your new Code-lib App.
 You can also take a look at the <a href="http://codelibfw.com">Code-lib website</a> for additional information.
+
+_Both, the number of samples and the Codelib website will continue growing as time passes._
 
 #### Contributing
 
