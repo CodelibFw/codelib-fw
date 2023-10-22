@@ -45,7 +45,7 @@ class CLFlag
     const SHARED = 'shared';
     const NOT_SHARED = 'not_shared';
     // used as Session keys and other places
-    const IS_LOGGED_IN = 'IsLoggedIn';
+    const IS_LOGGED_IN = 'LoggedIn';
     const ROLE_ID = 'roleid';
     const USERNAME = 'username';
     // pre-defined user roles (you may create your own ones, ignore or replace these ones)

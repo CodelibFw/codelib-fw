@@ -14,8 +14,8 @@ easily replace core functionality, conventions and terminology.<br>
 Among its features:<br>
 - Quickly create static and dynamic PHP Web Apps. 
 - Create Plugins/Services for your app, and use Dependency Injection to wire all its dependencies.
-- Replace different parts of the framework as you want without complications
-- Easily create and reuse your own components
+- Replace different parts of the framework as you want without complications.
+- Easily create and reuse your own components.
 - Easily add filters to the request, response or specific functionality within your App.
 - Easy collaboration among team members, with clear separation of concerns and conventions.
 - Create complex workflows, with flow keys processed by one or many sync or async services.

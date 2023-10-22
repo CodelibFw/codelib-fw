@@ -707,11 +707,16 @@ class CLHtmlApp implements CLApp
         }
     }
 
-    private function mkPage($key) { _log('Mking page: '.$key);
+    private function mkPage($key) {
         $page = new CLHtmlPage(null, '');
         $accesslevel = $this->pageDef[$key]['protection'];
-        if ($accesslevel !== 'none' && !$this->clsession->get(CLFlag::IS_LOGGED_IN)) {
-            throw new CLAppException('Access to page denied. Please login first');
+        if ($accesslevel !== 'none') {
+            if (!$this->clsession->get(CLFlag::IS_LOGGED_IN)) {
+                throw new CLAppException(_T('Access to page denied. Please login first'));
+            }
+            if ($accesslevel !== CLFlag::IS_LOGGED_IN && !greenLight($accesslevel, $this->clsession)) {
+                throw new CLAppException(_T('Access to page denied. No privileges'));
+            }
         }
         $this->checkLAndFElements($key);
         $page->setLookandFeel($this->pageDef[$key]['lf'][0]);
