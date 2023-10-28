@@ -61,6 +61,8 @@ class CLConfig {
             $this->emailConfig['emailLib'] = $this->emailLib;
         }
         $this->setClKey("clkey");
+        $this->setFrontendFolder();
+        $this->setThemeFolder();
     }
 
     /**
@@ -302,14 +304,67 @@ class CLConfig {
 
     public function setDomainName(string $domainName) {
         $this->customConfig['domain'] = $domainName ?? '';
+        return $this;
     }
 
     public function getDomainName() {
         return $this->customConfig['domain'] ?? '';
     }
 
+    /**
+     * Sets the base look and feel folder, which by default is 'lookandfeel'
+     * Whatever it is changed to, Codelib will still look for the 'html' and 'assets' subfolders within it
+     * @param string $folder
+     * @return $this|void
+     */
+    public function setFrontendFolder($folder = 'lookandfeel/') {
+        if (!isset($folder)) { return $this; }
+        if ($folder !== 'lookandfeel/') {
+            $folder = append($folder, '/');
+            if (startsWith($folder, '/')) {
+                $folder = mb_substr($folder, 1);
+            }
+        }
+        $this->customConfig['landf_folder'] = $folder;
+        define('CLFRONT', $folder);
+        return $this;
+    }
+
+    public function getFrontendFolder() {
+        return $this->getAppConfig('landf_folder', 'lookandfeel/');
+    }
+
+    /**
+     * Sets the Theme folder of the App, which by default is 'lookandfeel/themes'
+     * Codelib will look for the active (current) theme within this folder. It can be a subfolder or a single file
+     * @param string $folder
+     * @return $this
+     */
+    public function setThemeFolder($folder = 'lookandfeel/themes/') {
+        if (!isset($folder)) { return $this; }
+        if ($folder !== 'lookandfeel/themes/') {
+            $folder = append($folder, '/');
+            if (startsWith($folder, '/')) {
+                $folder = mb_substr($folder, 1);
+            }
+        }
+        $this->customConfig['themefolder'] = $folder;
+        define('CLTHEME', $folder);
+        return $this;
+    }
+
+    /**
+     * Returns the Theme folder. Defaults to 'lookandfeel/themes/'
+     * @return mixed|null
+     */
+    public function getThemeFolder() {
+        return $this->getAppConfig('themefolder', 'lookandfeel/themes/');
+    }
+
     public function setBaseUri(string $baseUri) {
         $this->customConfig['baseuri'] = $baseUri ?? '';
+        define('BASEURI', $baseUri);
+        return $this;
     }
 
     public function getBaseUri() {

@@ -104,6 +104,27 @@ function isTrue($var) {
 }
 
 /**
+ * Appends $suffix to $src, if src does not already ends with $suffix
+ * @param string $src
+ * @param string $suffix
+ * @return string
+ */
+function append(string $src, string $suffix) {
+    if (endsWith($src, $suffix)) { return $src; }
+    return $src.$suffix;
+}
+
+/**
+ * Prepends $prefix to $src, if $src does not already starts with $prefix
+ * @param string $src
+ * @param string $prefix
+ * @return string the prefixed $src
+ */
+function prepend(string $src, string $prefix) {
+    if (startsWith($src, $prefix)) { return $src; }
+    return $prefix.$src;
+}
+/**
  * Checks if the Logged In user has the requested role or roles (priviledges)
  * if role ends in plus, for instance 3+, then check if user has 3 or higher access level (role)
  * @param mixed $role role or roles to check (if array)

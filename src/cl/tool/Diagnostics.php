@@ -145,8 +145,8 @@ class Diagnostics {
     }
 
     private function getLafKey($laf) {
-        if (file_exists(BASE_DIR.'/lookandfeel/html/'.$laf)) {
-            $lafData = file_get_contents(BASE_DIR . '/lookandfeel/html/' . $laf);
+        if (file_exists(BASE_DIR.CLFRONT.'/html/'.$laf)) {
+            $lafData = file_get_contents(BASE_DIR . CLFRONT.'/html/' . $laf);
             preg_match('/(input type="hidden"[\s]*)(name="clkey"[\s]*value=")([\S]+)"/', $lafData, $matches);
             if (isset($matches) && count($matches) > 3) {
                 return $matches[3];

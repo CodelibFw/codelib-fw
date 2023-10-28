@@ -57,6 +57,7 @@ class CLHtmlApp implements CLApp
     private $header;
     private $pages = array();
     private $pageDef = array();
+    private $theme = array();
     private $footer;
     private $plugins = array(), $inlPlugins = array();
     private $pluginResponse = null;
@@ -203,6 +204,18 @@ class CLHtmlApp implements CLApp
 
     public function getElement($key) {
         return $this->pages[$key] ?? null;
+    }
+
+    public function addTheme($key, array $lf) {
+        if (is_array($key)) {
+            $default = $isdefault;
+            foreach ($key as $flowKey) {
+                $this->theme[$flowKey] = $lf;
+            }
+            return $this;
+        }
+        $this->theme[$key] = $lf;
+        return $this;
     }
 
     /**
@@ -696,10 +709,12 @@ class CLHtmlApp implements CLApp
 
     private function checkLAndFElements($key) {
         $n = count($this->pageDef[$key]['lf']);
+        $landffolder = $this->getAppConfig()->getFrontendFolder();
+        $path = BASE_DIR . '/'. $landffolder.'html/';
         for ($i=0; $i < $n; $i++) {
             $elm = Util::addExt($this->pageDef[$key]['lf'][$i], '.php');
-            $path = BASE_DIR . '/lookandfeel/html/' . $elm;
-            if (!file_exists($path)) {
+            $filepath = $path.$elm;
+            if (!file_exists($filepath)) {
                 if (!file_exists(CL_DIR . '../resources/lookandfeel/html/' . $elm)) {
                     throw new \Exception('Missing page '.$elm.' for defined key '.$key);
                 }
@@ -707,7 +722,21 @@ class CLHtmlApp implements CLApp
         }
     }
 
-    private function mkPage($key) {
+    private function mkTheme($key) {
+        if (!isset($this->theme[$key])) {
+            _log('Theme key '.$key.' does not exist in theme array');
+            return;
+        }
+        $path = BASE_DIR . '/'. $this->getAppConfig()->getThemeFolder().$this->theme[$key];
+        if (!file_exists($path)) {
+            _log('Did not find theme at: '.$path);
+            return;
+        }
+        $page = new CLHtmlPage(null, '');
+
+    }
+
+    private function mkPage($key) { $ddd = CLFRONT;
         $page = new CLHtmlPage(null, '');
         $accesslevel = $this->pageDef[$key]['protection'];
         if ($accesslevel !== 'none') {
@@ -909,6 +938,9 @@ class CLHtmlApp implements CLApp
 
         CLInstantiator::addRef('emailService', 'cl\messaging\email\Email', null, [$this->getAppConfig()]);
         CLInstantiator::addRef('httpclient', 'cl\core\CLSimpleHttpClient', '\cl\contract\CLHttpClient');
+        if (!defined('BASEURI')) {
+            $this->getAppConfig()->setBaseUri('/');
+        }
         $this->addFilters();
     }
 

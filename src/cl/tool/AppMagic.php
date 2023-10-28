@@ -233,16 +233,16 @@ class AppMagic
             try {
                 makedir($path . '/core/', 0777, true);
                 makedir($path . '/filter/', 0777, true);
-                makedir($path . '/lookandfeel/', 0777, true);
+                makedir($path . CLFRONT.'/', 0777, true);
                 makedir($path . '/plugin/', 0777, true);
                 makedir($path . '/resources/', 0777, true);
                 makedir($path . '/logs/', 0777, true);
                 makedir($path . '/vendor/', 0777, true);
-                makedir($path . '/lookandfeel/css/', 0777, true);
-                makedir($path . '/lookandfeel/html/', 0777, true);
-                makedir($path . '/lookandfeel/img/', 0777, true);
-                makedir($path . '/lookandfeel/js/', 0777, true);
-                makedir($path . '/lookandfeel/vendor/', 0777, true);
+                makedir($path . CLFRONT.'/css/', 0777, true);
+                makedir($path . CLFRONT.'/html/', 0777, true);
+                makedir($path . CLFRONT.'/img/', 0777, true);
+                makedir($path . CLFRONT.'/js/', 0777, true);
+                makedir($path . CLFRONT.'/vendor/', 0777, true);
                 makedir($path . '/resources/language/en/', 0777, true);
                 return true;
             } catch(\Exception $e) {
