@@ -1176,6 +1176,10 @@ class CLHtmlApp implements CLApp
             $element = new CLHtmlPage(null, '');
             $element->addElement('notfoundpage.php');
         }
+		$feedback = $element->getVar('feedback');
+        if (!isset($feedback)) {
+            $element->setVar('feedback', _T('What you requested was not found in this website'));
+        }
         return $element;
     }
 

@@ -99,7 +99,7 @@ class CLRoute
         if ($this->isSystemEvent($key)) {
             return ($this->key === $key);
         }
-        if ($this->key == '*/*') { return $this->allowed(); }
+        if ($this->key == '*/*' || $this->key == '**' || $this->key == '*') { return $this->allowed(); }
         if ($this->isRegEx($this->key)) {
             if (preg_match($this->key, $key) == 1) {
                 return $this->allowed();
