@@ -23,11 +23,7 @@ Among its features:<br>
 
 #### Samples
 
-Take a look at our <a href="https://github.com/codelibfw/cl-samples">samples</a> released under the Apache license. You can
-use any of the samples as a starting point for your new Code-lib App.
-You can also take a look at the <a href="http://codelibfw.com">Code-lib website</a> for additional information.
-
-_Both, the number of samples and the Codelib website will continue growing as time passes._
+This is work in progress, but there are a few samples available here: <a href="https://github.com/TheEntreveloper/clfw-samples">samples at Entreveloper</a> released under the Apache license. You can use any of the samples as a starting point for any App based on Codelib.
 
 #### Contributing
 
@@ -46,9 +42,8 @@ _Working together we can create a better product that benefits us all_.
 
 #### Sponsorship
 
-The project already has a certain amount of funding to cover the cost of specific features under development. If you would 
+The project has a certain amount of funding to cover the cost of specific features under development. If you would 
 like to support the development with any amount of funding, you are welcome to do so. Feel free to get in touch to discuss it.
-More details will be made available here as soon as possible.
 
 #### License
 

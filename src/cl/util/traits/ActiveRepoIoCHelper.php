@@ -11,6 +11,8 @@ use cl\core\CLDependency;
  */
 trait ActiveRepoIoCHelper
 {
+    private $activeRepo;
+    
     /**
      * @param mixed $activeRepo
      * @return CLUserPlugin

@@ -98,3 +98,8 @@ define('ERRORPAGE', 'cl_error_page');
 define('NOTFOUNDPAGE', 'cl_not_found_page');
 define('LOGGED_IN', 'LoggedIn'); // can be used interchangeably with CLFlag::IS_LOGGED_IN
 define('ROLE_ID', 'roleid'); // can be used interchangeably with CLFlag::ROLE_ID
+define('AI_API_PROVIDER', 'AiAPIProvider');
+define('AI_API_URL', 'AiAPIUrl');
+define('AI_API_KEY', 'AiAPIKey');
+
+
